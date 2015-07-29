@@ -11,7 +11,7 @@ var paths = {
   sass: ['./scss/**/*.scss']
 };
 
-gulp.task('default', ['sass']);
+gulp.task('default', ['jshint', 'test']);
 
 gulp.task('sass', function(done) {
   gulp.src('./scss/ionic.app.scss')
@@ -22,7 +22,9 @@ gulp.task('sass', function(done) {
     .pipe(minifyCss({
       keepSpecialComments: 0
     }))
-    .pipe(rename({ extname: '.min.css' }))
+    .pipe(rename({
+      extname: '.min.css'
+    }))
     .pipe(gulp.dest('./www/css/'))
     .on('end', done);
 });
@@ -55,13 +57,23 @@ gulp.task('git-check', function(done) {
 var karma = require('karma').server;
 
 /**
-* Test task, run test once and exit
-*/
+ * Test task, run test once and exit
+ */
 gulp.task('test', function(done) {
-    karma.start({
-        configFile: __dirname + '/tests/my.conf.js',
-        singleRun: true
-    }, function() {
-        done();
-    });
+  karma.start({
+    configFile: __dirname + '/tests/my.conf.js',
+    singleRun: true
+  }, function() {
+    done();
+  });
+});
+
+var jshint = require('gulp-jshint');
+
+gulp.task('jshint', function() {
+  gulp
+    .src(['./www/js/**/*.js', './tests/**/*.js'])
+    .pipe(jshint())
+    .pipe(jshint.reporter('jshint-stylish'))
+    .pipe(jshint.reporter('fail'));
 });
