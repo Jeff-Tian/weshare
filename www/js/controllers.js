@@ -1,8 +1,12 @@
 angular.module('starter.controllers', [])
 
-.controller('DashCtrl', function($scope) {})
+.controller('AppCtrl', ['Recover', 'Weibo', function(Recover, Weibo) {
+  eval(Recover.get());
+}])
 
-.controller('ChatsCtrl', function($scope, Chats) {
+.controller('DashCtrl', [function($scope) {}])
+
+.controller('ChatsCtrl', ['$scope', 'Chats', function($scope, Chats) {
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
   // To listen for when this page is active (for example, to refresh data),
@@ -15,14 +19,28 @@ angular.module('starter.controllers', [])
   $scope.remove = function(chat) {
     Chats.remove(chat);
   };
-})
+}])
 
-.controller('ChatDetailCtrl', function($scope, $stateParams, Chats) {
+.controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', function($scope, $stateParams, Chats) {
   $scope.chat = Chats.get($stateParams.chatId);
-})
+}])
 
-.controller('AccountCtrl', function($scope) {
+.controller('AccountCtrl', ['$scope', 'Weibo', function($scope, Weibo) {
   $scope.settings = {
-    enableFriends: true
+    bindWeibo: false
   };
-});
+
+  $scope.bindWeibo = function() {
+    Weibo.authorize(function(code) {
+      alert(code);
+    }, function(message, reason) {
+      alert(message);
+    });
+  };
+
+  $scope.$watch('settings.bindWeibo', function(newValue, oldValue) {
+    if (!oldValue && newValue) {
+      Weibo.bind();
+    }
+  });
+}]);
