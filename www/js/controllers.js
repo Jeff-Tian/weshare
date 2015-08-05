@@ -26,23 +26,39 @@ angular.module('starter.controllers', [])
         $scope.chat = Chats.get($stateParams.chatId);
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', function ($scope, Weibo, $timeout, $interval) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents) {
         $scope.settings = {
             bindWeibo: Weibo.hasBound()
         };
 
-        $interval(function () {
+        Poll.while($scope.settings.bindWeibo === true, function () {
             $scope.settings.bindWeibo = Weibo.hasBound();
-        }, 5000);
+        });
 
         $scope.$watch('settings.bindWeibo', function (newValue, oldValue) {
             if (!oldValue && newValue) {
                 Weibo.bind()
-                    .then(null, function () {
+                    .then(function () {
+                        $scope.settings.bindWeibo = Weibo.hasBound();
+                    }, function () {
                         $timeout(function () {
                             $scope.settings.bindWeibo = false;
                         })
                     });
             }
+
+            if (!newValue && oldValue) {
+                Weibo.unbind();
+            }
         });
-    }]);
+
+        AppEvents.handle(AppEvents.weibo.bound, function () {
+            $scope.settings.bindWeibo = true;
+            
+            Poll.while($scope.settings.bindWeibo === true, function () {
+                $scope.settings.bindWeibo = Weibo.hasBound();
+            });
+        });
+    }])
+
+;

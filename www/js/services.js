@@ -145,8 +145,28 @@ angular.module('starter.services', [])
                     StorageService.saveToStorage(key, value);
                 },
 
-                fetch: function () {
-                    return this.get() || {};
+                fetch: function (key) {
+                    var me = this.get() || {};
+
+                    if (!key) {
+                        return me;
+                    } else {
+                        return me[key] || {};
+                    }
+                },
+
+                save: function (key, value) {
+                    var me = this.fetch();
+                    me[key] = value;
+
+                    this.set(me);
+                },
+
+                delete: function (key) {
+                    var me = this.fetch();
+                    delete me[key];
+
+                    this.set(me);
                 }
             };
         }
@@ -157,16 +177,7 @@ angular.module('starter.services', [])
     }])
 
     .factory('Setting', ['StorageFactoryService', function (StorageFactoryService) {
-        var s = StorageFactoryService.create('jiy_setting');
-
-        s.save = function (key, value) {
-            var me = s.fetch();
-            me[key] = value;
-
-            s.set(me);
-        };
-
-        return s;
+        return StorageFactoryService.create('jiy_setting');
     }])
 
     .factory('Recover', ['StorageFactoryService', function (StorageFactoryService) {
@@ -195,7 +206,7 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('Weibo', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting) {
+    .factory('Weibo', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents) {
         var redirectUrl = 'http://www.meiyanruhua.com';
         var appId = '1882668017';
         var clientSecret = '60611efdfb1af9a8bf51694b9dcbe7b3';
@@ -301,15 +312,16 @@ angular.module('starter.services', [])
                 this.tryGetCodeFromWebCallback(function (code) {
                     self.getAccessTokenAndUidByCode(code)
                         .then(function (data) {
-                            alert(JSON.stringify(data));
+                            //alert(JSON.stringify(data));
                             Setting.save('weibo', data);
                             deferred.resolve(data);
+                            AppEvents.trigger(AppEvents.weibo.bound);
                         }, function (reason) {
-                            alert('绑定失败');
+                            UI.toast('绑定失败');
                             deferred.reject(reason);
                         });
                 }, function (message) {
-                    alert(message);
+                    UI.toast(message);
                     deferred.reject(message);
                 }, function () {
                     Recover.save('Weibo.bind();');
@@ -318,6 +330,21 @@ angular.module('starter.services', [])
                 });
 
                 return deferred.promise;
+            },
+
+            unbind: function () {
+                var url = '{0}?access_token={1}'.format('https://api.weibo.com/oauth2/revokeoauth2', Setting.fetch('weibo').access_token);
+
+                if (DeviceHelper.isInBrowser()) {
+                    url = Proxy.proxyNative(url);
+                }
+
+                $http({
+                    method: 'GET',
+                    url: url
+                }).success(function () {
+                    Setting.delete('weibo');
+                });
             },
 
             hasBound: function () {
@@ -336,4 +363,92 @@ angular.module('starter.services', [])
                 return true;
             }
         };
-    }]);
+    }])
+
+    .service('UI', ['$http', '$window', '$q', '$ionicLoading', '$timeout', function ($http, $window, $q, $ionicLoading, $timeout) {
+        var self = this;
+
+        this.toast = function (msg, duration, position) {
+            if (!duration)
+                duration = 'short';
+            if (!position)
+                position = 'center';
+
+            // PhoneGap? Use native:
+            if ($window.plugins) {
+                if ($window.plugins.toast)
+                    $window.plugins.toast.show(msg, duration, position,
+                        function (a) {
+                        }, function (err) {
+                        });
+                return;
+            }
+
+            // … fallback / customized $ionicLoading:
+            $ionicLoading.show({
+                template: '<div class="toast-fallback">' + msg + '</div>',
+                noBackdrop: true,
+                hideOnStateChange: false,
+                duration: (duration == 'short' ? 2000 : 5000)
+            });
+        };
+
+        this.toastLater = function (msg, duration, position) {
+            $timeout(function () {
+                self.toast(msg, duration, position);
+            }, 500);
+        };
+    }])
+
+    .service('Poll', ['$timeout', function ($timeout) {
+        var defaultInterval = 5000;
+
+        var next = function (poll, interval) {
+            $timeout(poll, interval || defaultInterval);
+        };
+
+        this.until = function (endPollCondition, poll, interval) {
+            var res = poll();
+
+            if (!endPollCondition) {
+                next(poll, interval);
+            }
+
+            return res;
+        };
+
+        this.while = function (condition, poll, interval) {
+            var res;
+
+            if (condition) {
+                res = poll();
+
+                next(poll, interval);
+
+                return res;
+            }
+        };
+    }])
+
+    .factory('AppEvents', ['$rootScope', function ($rootScope) {
+        return {
+            loading: {
+                show: 'loading:show',
+                hide: 'loading:hide'
+            },
+
+            weibo: {
+                bound: 'weibo:bound',
+                unbound: 'weibo:unbound'
+            },
+
+            trigger: function (name) {
+                $rootScope.$broadcast(name);
+            },
+
+            handle: function (name, callback) {
+                return $rootScope.$on(name, callback);
+            }
+        };
+    }])
+;
