@@ -26,36 +26,52 @@ angular.module('starter.controllers', [])
         $scope.chat = Chats.get($stateParams.chatId);
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ) {
+        function resetPushState() {
+            window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
+        }
+
         $scope.settings = {
-            bindWeibo: Weibo.hasBound()
+            bindWeibo: Weibo.hasBound(),
+            bindQQ: QQ.hasBound()
         };
 
-        Poll.while($scope.settings.bindWeibo === true, function () {
+        Poll.while(function () {
+            return $scope.settings.bindWeibo === true
+        }, function () {
             $scope.settings.bindWeibo = Weibo.hasBound();
         });
 
-        $scope.$watch('settings.bindWeibo', function (newValue, oldValue) {
-            if (!oldValue && newValue) {
+        $scope.toggleQQBinding = function () {
+
+        };
+
+        $scope.toggleWeiboBinding = function () {
+            console.log('bindWeibo = ' + $scope.settings.bindWeibo);
+            if ($scope.settings.bindWeibo) {
                 Weibo.bind()
                     .then(function () {
                         $scope.settings.bindWeibo = Weibo.hasBound();
                     }, function () {
-                        $timeout(function () {
-                            $scope.settings.bindWeibo = false;
-                        })
+                        $scope.settings.bindWeibo = false;
+                        $timeout(resetPushState);
                     });
             }
+        };
 
-            if (!newValue && oldValue) {
+        $scope.$watch('settings.bindWeibo', function (newValue, oldValue) {
+            if (oldValue && !newValue) {
+                console.log('change from true to false');
                 Weibo.unbind();
             }
         });
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
             $scope.settings.bindWeibo = true;
-            
-            Poll.while($scope.settings.bindWeibo === true, function () {
+
+            Poll.while(function () {
+                return $scope.settings.bindWeibo === true;
+            }, function () {
                 $scope.settings.bindWeibo = Weibo.hasBound();
             });
         });

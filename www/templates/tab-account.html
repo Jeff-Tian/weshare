@@ -1,9 +1,12 @@
 <ion-view view-title="我的社交账号">
-  <ion-content>
-    <ion-list>
-      <ion-toggle ng-model="settings.bindWeibo" ng-click="bindWeibo">
-        绑定微博账号
-      </ion-toggle>
-    </ion-list>
-  </ion-content>
+    <ion-content>
+        <ion-list>
+            <ion-toggle ng-model="settings.bindWeibo" ng-change="toggleWeiboBinding()">
+                绑定 微博 账号
+            </ion-toggle>
+            <ion-toggle ng-model="settings.bindQQ" ng-click="toggleQQBinding()">
+                绑定 QQ 账号
+            </ion-toggle>
+        </ion-list>
+    </ion-content>
 </ion-view>

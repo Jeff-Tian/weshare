@@ -196,6 +196,10 @@ angular.module('starter.services', [])
                 }
 
                 return recoverState;
+            },
+
+            recover: function () {
+                eval(this.get());
             }
         };
     }])
@@ -206,7 +210,36 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('Weibo', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents) {
+    .factory('Social', ['Setting', function (Setting) {
+        return {
+            qq: 'qq',
+            weibo: 'weibo',
+
+            hasBound: function (socialMedia) {
+                console.log(socialMedia);
+                var social = Setting.fetch(socialMedia);
+                console.log(social);
+
+                if (!social || !social.access_token) {
+                    return false;
+                }
+
+                var now = new Date().getTime() / 1000;
+
+                return parseFloat(social.expires_in) > now;
+            }
+        }
+    }])
+
+    .factory('QQ', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
+        return {
+            hasBound: function () {
+                return Social.hasBound(Social.qq);
+            }
+        };
+    }])
+
+    .factory('Weibo', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
         var redirectUrl = 'http://www.meiyanruhua.com';
         var appId = '1882668017';
         var clientSecret = '60611efdfb1af9a8bf51694b9dcbe7b3';
@@ -313,6 +346,8 @@ angular.module('starter.services', [])
                     self.getAccessTokenAndUidByCode(code)
                         .then(function (data) {
                             //alert(JSON.stringify(data));
+                            data.expires_in = (new Date().getTime() / 1000) + parseFloat(data.expires_in);
+
                             Setting.save('weibo', data);
                             deferred.resolve(data);
                             AppEvents.trigger(AppEvents.weibo.bound);
@@ -333,7 +368,13 @@ angular.module('starter.services', [])
             },
 
             unbind: function () {
-                var url = '{0}?access_token={1}'.format('https://api.weibo.com/oauth2/revokeoauth2', Setting.fetch('weibo').access_token);
+                var accessToken = Setting.fetch('weibo').access_token;
+
+                if (!accessToken) {
+                    return;
+                }
+
+                var url = '{0}?access_token={1}'.format('https://api.weibo.com/oauth2/revokeoauth2', accessToken);
 
                 if (DeviceHelper.isInBrowser()) {
                     url = Proxy.proxyNative(url);
@@ -348,19 +389,9 @@ angular.module('starter.services', [])
             },
 
             hasBound: function () {
-                var weibo = Setting.fetch().weibo;
-
-                if (!weibo || !weibo.access_token) {
-                    return false;
-                }
-
-                var now = new Date().getTime / 1000;
-
-                if (parseFloat(weibo.expires_in) < now) {
-                    return false;
-                }
-
-                return true;
+                var res = Social.hasBound(Social.weibo);
+                console.log('bound = ' + res);
+                return res;
             }
         };
     }])
@@ -402,16 +433,23 @@ angular.module('starter.services', [])
 
     .service('Poll', ['$timeout', function ($timeout) {
         var defaultInterval = 5000;
+        var self = this;
 
         var next = function (poll, interval) {
-            $timeout(poll, interval || defaultInterval);
+            var int = interval || defaultInterval;
+
+            console.log('poll after ' + int);
+
+            $timeout(poll, int);
         };
 
         this.until = function (endPollCondition, poll, interval) {
             var res = poll();
 
-            if (!endPollCondition) {
-                next(poll, interval);
+            if (!endPollCondition()) {
+                next(function () {
+                    self.until(endPollCondition, poll, interval);
+                }, interval);
             }
 
             return res;
@@ -420,10 +458,14 @@ angular.module('starter.services', [])
         this.while = function (condition, poll, interval) {
             var res;
 
-            if (condition) {
+            console.log('condition = ' + condition());
+
+            if (condition()) {
                 res = poll();
 
-                next(poll, interval);
+                next(function () {
+                    self.while(condition, poll, interval);
+                }, interval);
 
                 return res;
             }
