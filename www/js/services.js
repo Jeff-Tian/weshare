@@ -129,6 +129,11 @@ angular.module('starter.services', [])
             },
 
             saveToStorage: function (key, value) {
+                if (!value) {
+                    localStorage.removeItem(key);
+                    return;
+                }
+
                 localStorage.setItem(key, JSON.stringify(value));
             }
         };
@@ -157,7 +162,7 @@ angular.module('starter.services', [])
 
                 save: function (key, value) {
                     var me = this.fetch();
-                    me[key] = value;
+                    me[key] = angular.extend({}, me[key], value);
 
                     this.set(me);
                 },
@@ -210,7 +215,7 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('Social', ['Setting', function (Setting) {
+    .factory('Social', ['Setting', 'Recover', 'UI', 'AppEvents', '$q', 'DeviceHelper', function (Setting, Recover, UI, AppEvents, $q, DeviceHelper) {
         return {
             qq: 'qq',
             weibo: 'weibo',
@@ -227,14 +232,159 @@ angular.module('starter.services', [])
                 var now = new Date().getTime() / 1000;
 
                 return parseFloat(social.expires_in) > now;
+            },
+
+            authorize: function (authorizeUrl, redirectUrl, successCallback, errorCallback) {
+                var target = '_self';
+
+                if (DeviceHelper.isIOS() || DeviceHelper.isAndroid()) {
+                    target = '_blank';
+                }
+
+                var ref = window.open(authorizeUrl, target);
+
+                if (!ref) {
+                    errorCallback('弹出窗口被拦截');
+
+                    return;
+                }
+
+                var code;
+
+                ref.addEventListener('loadstart', function (event) {
+                    var url = event.url;
+                    if (url.startsWith(redirectUrl)) {
+                        ref.close();
+
+                        code = getUrlParams(url).code;
+                        successCallback(code);
+                    }
+                });
+
+                ref.addEventListener('exit', function (event) {
+                    if (!code) {
+                        errorCallback({
+                            userCancel: true
+                        });
+                    }
+                });
             }
         }
     }])
 
     .factory('QQ', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
+        var appId = '101202914';
+        var redirectUri = 'http://www.meiyanruhua.com';
+
         return {
             hasBound: function () {
                 return Social.hasBound(Social.qq);
+            },
+
+            unbind: function () {
+                var accessToken = Setting.fetch('qq').access_token;
+
+                if (!accessToken) {
+                    return;
+                }
+
+                Setting.delete('qq');
+            },
+
+            bind: function () {
+                var url = 'https://graph.qq.com/oauth2.0/authorize?response_type=token&client_id={0}&redirect_uri={1}&state={2}'
+                    .format(appId, encodeURIComponent(redirectUri), AppUrlHelper.encodeCurrentState());
+                var self = this;
+
+                var deferred = $q.defer();
+
+                this.webCallbackHandler(function (access_token) {
+                    self.getUidHandler(access_token, function (openId) {
+                        Setting.save('qq', {openid: openId});
+                        deferred.resolve(Setting.fetch('qq'));
+                    }, function () {
+                        Setting.reject('没有得到 QQ openid, 绑定 QQ 失败');
+                    });
+                }, function (message) {
+                    UI.toast(message);
+                    deferred.reject(message);
+                }, function () {
+                    Recover.save('QQ.bind();');
+                    Social.authorize(url, redirectUri);
+                    deferred.reject('跳转中...');
+                });
+
+                return deferred.promise;
+            },
+
+            getUidHandler: function (access_token, successCallback, errorCallback) {
+                var isHttpRequestSuccess = false;
+                var httpResponseData = null;
+
+                // QQ OAuth Open ID response always return callback({...})
+                function captureOAuthOpenIdCallback() {
+                    var oldCallback = window.callback;
+
+                    window.callback = function (data) {
+                        isHttpRequestSuccess = true;
+                        httpResponseData = data;
+
+                        window.callback = oldCallback;
+                    };
+                }
+
+                var url = 'https://graph.qq.com/oauth2.0/me?access_token={0}'.format(access_token);
+
+                if (DeviceHelper.isInBrowser()) {
+                    url = Proxy.proxyNative(url);
+                }
+
+                // QQ OAuth Open ID response always return callback({...})
+                captureOAuthOpenIdCallback();
+
+                $http({
+                    method: 'JSONP',
+                    url: url
+                })
+                    .success(function (data) {
+                        var openid = data.openid;
+                        Setting.save('qq', data);
+                        successCallback(openid);
+                    })
+                    .error(function (data) {
+                        if (isHttpRequestSuccess) {
+                            var openid = httpResponseData.openid;
+                            Setting.save('qq', data);
+                            successCallback(openid);
+                        } else {
+                            errorCallback(data);
+                        }
+                    });
+            },
+
+            webCallbackHandler: function (successCallback, errorCallback, noCodePresentCallback) {
+                var hash = window.location.hash;
+
+                var index = hash.indexOf('?');
+                if (index >= 0) {
+                    var queries = getUrlParams(hash.substr(index + 1));
+
+                    if (queries.access_token && hash.indexOf('?access_token') >= 0) {
+                        Setting.save('qq', {
+                            access_token: queries.access_token,
+                            expires_in: (new Date().getTime() / 1000) + parseFloat(queries.expires_in)
+                        });
+
+                        successCallback(queries.access_token);
+                    }
+                    else {
+                        //errorCallback('得到的 access_token 为空');
+                        noCodePresentCallback();
+                    }
+                }
+                else {
+                    noCodePresentCallback();
+                }
             }
         };
     }])
@@ -293,7 +443,8 @@ angular.module('starter.services', [])
                         successCallback(queries.code);
                     }
                     else {
-                        errorCallback('得到的 code 为空');
+                        //errorCallback('得到的 code 为空');
+                        noCodePresentCallback();
                     }
                 }
                 else {

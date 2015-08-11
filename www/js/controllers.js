@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-    .controller('AppCtrl', ['Recover', 'Weibo', function (Recover, Weibo) {
+    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', function (Recover, Weibo, QQ) {
         eval(Recover.get());
     }])
 
@@ -43,7 +43,15 @@ angular.module('starter.controllers', [])
         });
 
         $scope.toggleQQBinding = function () {
-
+            if ($scope.settings.bindQQ) {
+                QQ.bind()
+                    .then(function () {
+                        $scope.settings.bindQQ = QQ.hasBound();
+                    }, function () {
+                        $scope.settings.bindQQ = false;
+                        $timeout(resetPushState);
+                    });
+            }
         };
 
         $scope.toggleWeiboBinding = function () {
@@ -63,6 +71,12 @@ angular.module('starter.controllers', [])
             if (oldValue && !newValue) {
                 console.log('change from true to false');
                 Weibo.unbind();
+            }
+        });
+
+        $scope.$watch('settings.bindQQ', function (newValue, oldValue) {
+            if (oldValue && !newValue) {
+                QQ.unbind();
             }
         });
 
