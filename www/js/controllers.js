@@ -1,7 +1,11 @@
 angular.module('starter.controllers', [])
 
-    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', function (Recover, Weibo, QQ) {
-        eval(Recover.get());
+    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', function (Recover, Weibo, QQ, DeviceHelper) {
+        ionic.Platform.ready(function () {
+            if (DeviceHelper.isInBrowser()) {
+                eval(Recover.get());
+            }
+        });
     }])
 
     .controller('DashCtrl', [function ($scope) {
@@ -26,7 +30,7 @@ angular.module('starter.controllers', [])
         $scope.chat = Chats.get($stateParams.chatId);
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI) {
         function resetPushState() {
             window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
         }
@@ -37,9 +41,15 @@ angular.module('starter.controllers', [])
         };
 
         Poll.while(function () {
-            return $scope.settings.bindWeibo === true
+            return $scope.settings.bindWeibo === true;
         }, function () {
             $scope.settings.bindWeibo = Weibo.hasBound();
+        });
+
+        Poll.while(function () {
+            return $scope.settings.bindQQ === true;
+        }, function () {
+            $scope.settings.bindQQ = QQ.hasBound();
         });
 
         $scope.toggleQQBinding = function () {
@@ -47,7 +57,13 @@ angular.module('starter.controllers', [])
                 QQ.bind()
                     .then(function () {
                         $scope.settings.bindQQ = QQ.hasBound();
+                        if ($scope.settings.bindQQ) {
+                            UI.toast('QQ 绑定成功');
+                        } else {
+                            UI.toast('QQ 绑定没有成功');
+                        }
                     }, function () {
+                        UI.toast('QQ 绑定失败');
                         $scope.settings.bindQQ = false;
                         $timeout(resetPushState);
                     });
@@ -60,7 +76,13 @@ angular.module('starter.controllers', [])
                 Weibo.bind()
                     .then(function () {
                         $scope.settings.bindWeibo = Weibo.hasBound();
+                        if ($scope.settings.bindWeibo) {
+                            UI.toast('微博 绑定成功');
+                        } else {
+                            UI.toast('微博 绑定失败');
+                        }
                     }, function () {
+                        UI.toast('微博 绑定失败');
                         $scope.settings.bindWeibo = false;
                         $timeout(resetPushState);
                     });

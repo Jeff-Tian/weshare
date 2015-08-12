@@ -221,9 +221,7 @@ angular.module('starter.services', [])
             weibo: 'weibo',
 
             hasBound: function (socialMedia) {
-                console.log(socialMedia);
                 var social = Setting.fetch(socialMedia);
-                console.log(social);
 
                 if (!social || !social.access_token) {
                     return false;
@@ -234,7 +232,7 @@ angular.module('starter.services', [])
                 return parseFloat(social.expires_in) > now;
             },
 
-            authorize: function (authorizeUrl, redirectUrl, successCallback, errorCallback) {
+            authorize: function (authorizeUrl, redirectUrl, successCallback, errorCallback, getInterestInfo) {
                 var target = '_self';
 
                 if (DeviceHelper.isIOS() || DeviceHelper.isAndroid()) {
@@ -249,23 +247,22 @@ angular.module('starter.services', [])
                     return;
                 }
 
-                var code;
+                var interestInfo;
 
                 ref.addEventListener('loadstart', function (event) {
                     var url = event.url;
+
                     if (url.startsWith(redirectUrl)) {
                         ref.close();
 
-                        code = getUrlParams(url).code;
-                        successCallback(code);
+                        interestInfo = getInterestInfo(url);
+                        successCallback(interestInfo);
                     }
                 });
 
                 ref.addEventListener('exit', function (event) {
-                    if (!code) {
-                        errorCallback({
-                            userCancel: true
-                        });
+                    if (!interestInfo) {
+                        errorCallback('操作已取消');
                     }
                 });
             }
@@ -292,26 +289,41 @@ angular.module('starter.services', [])
             },
 
             bind: function () {
+                function success(access_token) {
+                    self.getUidHandler(access_token, function (openId) {
+                        Setting.save('qq', {openid: openId});
+
+                        deferred.resolve(Setting.fetch('qq'));
+                    }, function () {
+                        deferred.reject('没有得到 QQ openid, 绑定 QQ 失败');
+                    });
+                }
+
+                function error(message) {
+                    UI.toast(message);
+                    deferred.reject(message);
+                }
+
                 var url = 'https://graph.qq.com/oauth2.0/authorize?response_type=token&client_id={0}&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUri), AppUrlHelper.encodeCurrentState());
                 var self = this;
 
                 var deferred = $q.defer();
 
-                this.webCallbackHandler(function (access_token) {
-                    self.getUidHandler(access_token, function (openId) {
-                        Setting.save('qq', {openid: openId});
-                        deferred.resolve(Setting.fetch('qq'));
-                    }, function () {
-                        Setting.reject('没有得到 QQ openid, 绑定 QQ 失败');
-                    });
-                }, function (message) {
-                    UI.toast(message);
-                    deferred.reject(message);
-                }, function () {
+                this.webCallbackHandler(success, error, function () {
                     Recover.save('QQ.bind();');
-                    Social.authorize(url, redirectUri);
-                    deferred.reject('跳转中...');
+
+                    Social.authorize(url, redirectUri, success, error, function (url) {
+                        var info = getUrlParams(url);
+                        info.expires_in = (new Date().getTime() / 1000) + parseFloat(info.expires_in);
+                        Setting.save('qq', info);
+
+                        return info.access_token;
+                    });
+
+                    if (DeviceHelper.isInBrowser()) {
+                        deferred.reject('跳转中...');
+                    }
                 });
 
                 return deferred.promise;
@@ -425,9 +437,7 @@ angular.module('starter.services', [])
 
                 ref.addEventListener('exit', function (event) {
                     if (!code) {
-                        errorCallback('获取 微博 code 失败!', {
-                            userCancel: true
-                        });
+                        errorCallback('操作已取消');
                     }
                 });
             },
@@ -490,10 +500,7 @@ angular.module('starter.services', [])
             },
 
             bind: function () {
-                var self = this;
-                var deferred = $q.defer();
-
-                this.tryGetCodeFromWebCallback(function (code) {
+                function success(code) {
                     self.getAccessTokenAndUidByCode(code)
                         .then(function (data) {
                             //alert(JSON.stringify(data));
@@ -506,13 +513,24 @@ angular.module('starter.services', [])
                             UI.toast('绑定失败');
                             deferred.reject(reason);
                         });
-                }, function (message) {
+                }
+
+                function error(message) {
                     UI.toast(message);
                     deferred.reject(message);
-                }, function () {
+                }
+
+                var self = this;
+                var deferred = $q.defer();
+
+                this.tryGetCodeFromWebCallback(success, error, function () {
                     Recover.save('Weibo.bind();');
-                    self.authorize();
-                    deferred.reject('跳转中');
+
+                    self.authorize(success, error);
+
+                    if (DeviceHelper.isInBrowser()) {
+                        deferred.reject('跳转中');
+                    }
                 });
 
                 return deferred.promise;
@@ -551,6 +569,10 @@ angular.module('starter.services', [])
         var self = this;
 
         this.toast = function (msg, duration, position) {
+            if (typeof msg === 'object') {
+                msg = JSON.stringify(msg);
+            }
+
             if (!duration)
                 duration = 'short';
             if (!position)
