@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', function (Recover, Weibo, QQ, DeviceHelper) {
+    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', 'Wechat', function (Recover, Weibo, QQ, DeviceHelper, Wechat) {
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
                 eval(Recover.get());
@@ -30,14 +30,15 @@ angular.module('starter.controllers', [])
         $scope.chat = Chats.get($stateParams.chatId);
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'Wechat', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, Wechat) {
         function resetPushState() {
             window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
         }
 
         $scope.settings = {
             bindWeibo: Weibo.hasBound(),
-            bindQQ: QQ.hasBound()
+            bindQQ: QQ.hasBound(),
+            bindWechat: Wechat.hasBound()
         };
 
         Poll.while(function () {
@@ -51,6 +52,34 @@ angular.module('starter.controllers', [])
         }, function () {
             $scope.settings.bindQQ = QQ.hasBound();
         });
+
+        Poll.while(function () {
+            return $scope.settings.bindWechat === true;
+        }, function () {
+            $scope.settings.bindWechat = Wechat.hasBound();
+        });
+
+        function handleNotifyMessage(message) {
+            UI.toast(message);
+        }
+
+        $scope.toggleWechatBinding = function () {
+            if ($scope.settings.bindWechat) {
+                Wechat.bind()
+                    .then(function () {
+                        $scope.settings.bindWechat = Wechat.hasBound();
+                        if ($scope.settings.bindWechat) {
+                            UI.toast('微信 绑定成功');
+                        } else {
+                            UI.toast('微信 绑定没有成功');
+                        }
+                    }, function () {
+                        UI.toast('微信 绑定失败');
+                        $scope.settings.bindWechat = false;
+                        $timeout(resetPushState);
+                    }, handleNotifyMessage);
+            }
+        };
 
         $scope.toggleQQBinding = function () {
             if ($scope.settings.bindQQ) {
@@ -66,7 +95,7 @@ angular.module('starter.controllers', [])
                         UI.toast('QQ 绑定失败');
                         $scope.settings.bindQQ = false;
                         $timeout(resetPushState);
-                    });
+                    }, handleNotifyMessage);
             }
         };
 
@@ -85,7 +114,7 @@ angular.module('starter.controllers', [])
                         UI.toast('微博 绑定失败');
                         $scope.settings.bindWeibo = false;
                         $timeout(resetPushState);
-                    });
+                    }, handleNotifyMessage);
             }
         };
 
@@ -102,6 +131,12 @@ angular.module('starter.controllers', [])
             }
         });
 
+        $scope.$watch('settings.bindWechat', function (newValue, oldValue) {
+            if (oldValue && !newValue) {
+                Wechat.unbind();
+            }
+        });
+
         AppEvents.handle(AppEvents.weibo.bound, function () {
             $scope.settings.bindWeibo = true;
 
@@ -109,6 +144,16 @@ angular.module('starter.controllers', [])
                 return $scope.settings.bindWeibo === true;
             }, function () {
                 $scope.settings.bindWeibo = Weibo.hasBound();
+            });
+        });
+
+        AppEvents.handle(AppEvents.wechat.bound, function () {
+            $scope.settings.bindWechat = true;
+
+            Poll.while(function () {
+                return $scope.settings.bindWechat === true;
+            }, function () {
+                $scope.settings.bindWechat = Wechat.hasBound();
             });
         });
     }])

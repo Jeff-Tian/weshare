@@ -219,6 +219,25 @@ angular.module('starter.services', [])
         return {
             qq: 'qq',
             weibo: 'weibo',
+            wechat: 'wechat',
+
+            create: function (socialMedia) {
+                var self = this;
+
+                return {
+                    hasBound: function () {
+                        return self.hasBound(socialMedia);
+                    },
+
+                    unbind: function () {
+                        return self.unbind(socialMedia);
+                    }
+                };
+            },
+
+            unbind: function (socialMedia) {
+                Setting.delete(socialMedia);
+            },
 
             hasBound: function (socialMedia) {
                 var social = Setting.fetch(socialMedia);
@@ -269,6 +288,117 @@ angular.module('starter.services', [])
         }
     }])
 
+    .factory('Wechat', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
+        var appId = 'wx73e96afd84f7b784';
+        var appSecret = 'a83524d630aeebfa5bf5a248d56ed32c';
+        var redirectUrl = 'http://huaqq.cn';
+
+        var Wechat = Social.create(Social.wechat);
+
+        Wechat = angular.extend({}, Wechat, {
+            tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
+                var hash = window.location.hash;
+
+                var index = hash.indexOf('?');
+                if (index >= 0) {
+                    var queries = getUrlParams(hash.substr(index + 1));
+
+                    if (queries.code && hash.indexOf('?code') >= 0) {
+                        successCallback(queries.code);
+                    }
+                    else {
+                        //errorCallback('得到的 code 为空');
+                        noCodePresentCallback();
+                    }
+                }
+                else {
+                    noCodePresentCallback();
+                }
+            },
+
+            getAccessTokenAndUidByCode: function (code) {
+                var deferred = $q.defer();
+
+                var url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(appId, appSecret, redirectUrl, code);
+                var method = 'POST';
+
+                if (DeviceHelper.isInBrowser()) {
+                    url = Proxy.proxyNative(url);
+                }
+
+                $http({
+                    method: method,
+                    url: url
+                })
+                    .success(function (data) {
+                        if (data.errcode) {
+                            console.log('getting wechat access_token fail. data = ');
+                            console.log(JSON.stringify(data));
+                            deferred.reject(data);
+                            return;
+                        }
+
+                        console.log('getting wechat access token success. data =');
+                        console.log(JSON.stringify(data));
+
+                        deferred.resolve(data);
+                    })
+                    .error(function (data) {
+                        console.log('getting wechat access_token fail. data = ');
+                        console.log(JSON.stringify(data));
+
+                        deferred.reject(data);
+                    });
+
+                return deferred.promise;
+            },
+
+            authorize: function (successCallback, errorCallback) {
+                return Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
+                    .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
+                    return getUrlParams(url).code;
+                });
+            },
+
+            bind: function () {
+                function success(code) {
+                    self.getAccessTokenAndUidByCode(code)
+                        .then(function (data) {
+                            //alert(JSON.stringify(data));
+                            data.expires_in = (new Date().getTime() / 1000) + parseFloat(data.expires_in);
+
+                            Setting.save('wechat', data);
+                            deferred.resolve(data);
+                            AppEvents.trigger(AppEvents.wechat.bound);
+                        }, function (reason) {
+                            UI.toast('绑定失败');
+                            deferred.reject(reason);
+                        });
+                }
+
+                function error(message) {
+                    UI.toast(message);
+                    deferred.reject(message);
+                }
+
+                var self = this;
+                var deferred = $q.defer();
+
+                this.tryGetCodeFromWebCallback(success, error, function () {
+                    Recover.save('Wechat.bind();');
+
+                    self.authorize(success, error);
+
+                    deferred.notify('跳转中...');
+                });
+
+                return deferred.promise;
+            }
+        });
+
+        return Wechat;
+    }])
+
     .factory('QQ', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
         var appId = '101202914';
         var redirectUri = 'http://www.meiyanruhua.com';
@@ -279,13 +409,7 @@ angular.module('starter.services', [])
             },
 
             unbind: function () {
-                var accessToken = Setting.fetch('qq').access_token;
-
-                if (!accessToken) {
-                    return;
-                }
-
-                Setting.delete('qq');
+                Setting.delete(Social.qq);
             },
 
             bind: function () {
@@ -321,9 +445,7 @@ angular.module('starter.services', [])
                         return info.access_token;
                     });
 
-                    if (DeviceHelper.isInBrowser()) {
-                        deferred.reject('跳转中...');
-                    }
+                    deferred.notify('跳转中...');
                 });
 
                 return deferred.promise;
@@ -408,37 +530,9 @@ angular.module('starter.services', [])
 
         return {
             authorize: function (successCallback, errorCallback) {
-                var target = '_self';
-
-                if (DeviceHelper.isIOS() || DeviceHelper.isAndroid()) {
-                    target = '_blank';
-                }
-
-                var ref = window.open('https://api.weibo.com/oauth2/authorize?client_id={0}&response_type=code&redirect_uri={1}&state={2}'
-                    .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), target);
-
-                if (!ref) {
-                    errorCallback('弹出窗口被拦截');
-
-                    return;
-                }
-
-                var code;
-
-                ref.addEventListener('loadstart', function (event) {
-                    var url = event.url;
-                    if (url.startsWith(redirectUrl)) {
-                        ref.close();
-
-                        code = getUrlParams(url).code;
-                        successCallback(code);
-                    }
-                });
-
-                ref.addEventListener('exit', function (event) {
-                    if (!code) {
-                        errorCallback('操作已取消');
-                    }
+                return Social.authorize('https://api.weibo.com/oauth2/authorize?client_id={0}&response_type=code&redirect_uri={1}&state={2}'
+                    .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
+                    return getUrlParams(url).code;
                 });
             },
 
@@ -528,9 +622,7 @@ angular.module('starter.services', [])
 
                     self.authorize(success, error);
 
-                    if (DeviceHelper.isInBrowser()) {
-                        deferred.reject('跳转中');
-                    }
+                    deferred.notify('跳转中...');
                 });
 
                 return deferred.promise;
@@ -655,6 +747,11 @@ angular.module('starter.services', [])
             weibo: {
                 bound: 'weibo:bound',
                 unbound: 'weibo:unbound'
+            },
+
+            wechat: {
+                bound: 'wechat:bound',
+                unbound: 'wechat:unbound'
             },
 
             trigger: function (name) {
