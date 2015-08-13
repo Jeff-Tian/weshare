@@ -30,7 +30,14 @@
     "cordova-plugin-splashscreen",
     "com.ionic.keyboard",
     "org.apache.cordova.inappbrowser",
-    "cordova-plugin-inappbrowser"
+    "cordova-plugin-inappbrowser",
+    {
+      "locator": "https://github.com/xu-li/cordova-plugin-wechat",
+      "id": "xu.li.cordova.wechat",
+      "variables": {
+        "": ""
+      }
+    }
   ],
   "cordovaPlatforms": [
     "ios"

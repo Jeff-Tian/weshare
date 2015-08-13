@@ -288,14 +288,50 @@ angular.module('starter.services', [])
         }
     }])
 
-    .factory('Wechat', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
+    .service('WechatApp', ['UI', function (UI) {
+        var wechatApp = null;
+        var defaultMessage = '没有安装 Wechat Cordova 插件';
+
+        function noop(message) {
+            UI.toast(message || defaultMessage);
+        }
+
+        var isWechatDefined = (typeof Wechat !== 'undefined');
+
+        if (!isWechatDefined) {
+            wechatApp = {
+                isInstalled: function (installed, notInstalled) {
+                    notInstalled(defaultMessage);
+                },
+
+                auth: noop
+            };
+        } else {
+            wechatApp = Wechat;
+        }
+
+        ionic.Platform.ready(function () {
+            if (typeof Wechat !== 'undefined') {
+                wechatApp.isInstalled = Wechat.isInstalled;
+                wechatApp.auth = Wechat.auth;
+            }
+        });
+
+        return wechatApp;
+    }])
+
+    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp) {
         var appId = 'wx73e96afd84f7b784';
         var appSecret = 'a83524d630aeebfa5bf5a248d56ed32c';
         var redirectUrl = 'http://huaqq.cn';
 
-        var Wechat = Social.create(Social.wechat);
+        var nativeRedirectUri = 'http://www.huaoo.cc';
+        var nativeAppId = 'wxc1ad5744c8f95cec';
+        var nativeAppSecret = '838c73a021f875a96c2d718aab978665';
 
-        Wechat = angular.extend({}, Wechat, {
+        var WechatAccount = Social.create(Social.wechat);
+
+        WechatAccount = angular.extend({}, WechatAccount, {
             tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
                 var hash = window.location.hash;
 
@@ -316,10 +352,9 @@ angular.module('starter.services', [])
                 }
             },
 
-            getAccessTokenAndUidByCode: function (code) {
+            getAccessTokenAndUidVia: function (url) {
                 var deferred = $q.defer();
 
-                var url = 'https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(appId, appSecret, redirectUrl, code);
                 var method = 'POST';
 
                 if (DeviceHelper.isInBrowser()) {
@@ -354,15 +389,32 @@ angular.module('starter.services', [])
             },
 
             authorize: function (successCallback, errorCallback) {
-                return Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
+                Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
                     return getUrlParams(url).code;
                 });
             },
 
             bind: function () {
+                var self = this;
+                var deferred = $q.defer();
+
+                WechatApp.isInstalled(function (installed) {
+                    if (installed) {
+                        self.nativeBind().then(deferred.resolve, deferred.reject, deferred.notify);
+                    } else {
+                        deferred.reject('没有检测到 微信 应用');
+                    }
+                }, function (reason) {
+                    self.webBind().then(deferred.resolve, deferred.reject, deferred.notify);
+                });
+
+                return deferred.promise;
+            },
+
+            webBind: function () {
                 function success(code) {
-                    self.getAccessTokenAndUidByCode(code)
+                    self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(appId, appSecret, redirectUrl, code))
                         .then(function (data) {
                             //alert(JSON.stringify(data));
                             data.expires_in = (new Date().getTime() / 1000) + parseFloat(data.expires_in);
@@ -385,7 +437,7 @@ angular.module('starter.services', [])
                 var deferred = $q.defer();
 
                 this.tryGetCodeFromWebCallback(success, error, function () {
-                    Recover.save('Wechat.bind();');
+                    Recover.save('WechatAccount.bind();');
 
                     self.authorize(success, error);
 
@@ -393,10 +445,30 @@ angular.module('starter.services', [])
                 });
 
                 return deferred.promise;
+            },
+
+            nativeBind: function () {
+                var deferred = $q.defer();
+                var scope = "snsapi_userinfo";
+                var self = this;
+
+                WechatApp.auth(scope, function (response) {
+                    if (response && response.code) {
+                        self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(nativeAppId, nativeAppSecret, nativeRedirectUri, response.code));
+                    } else {
+                        deferred.reject('获取微信授权代码失败。' + JSON.stringify(response));
+                    }
+                }, function (reason) {
+                    console.error(reason);
+                    console.error('微信认证失败');
+                    deferred.reject(reason);
+                });
+
+                return deferred.promise;
             }
         });
 
-        return Wechat;
+        return WechatAccount;
     }])
 
     .factory('QQ', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {

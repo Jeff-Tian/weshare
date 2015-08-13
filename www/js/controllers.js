@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', 'Wechat', function (Recover, Weibo, QQ, DeviceHelper, Wechat) {
+    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function (Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
                 eval(Recover.get());
@@ -30,7 +30,7 @@ angular.module('starter.controllers', [])
         $scope.chat = Chats.get($stateParams.chatId);
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'Wechat', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, Wechat) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount) {
         function resetPushState() {
             window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
         }
@@ -38,7 +38,7 @@ angular.module('starter.controllers', [])
         $scope.settings = {
             bindWeibo: Weibo.hasBound(),
             bindQQ: QQ.hasBound(),
-            bindWechat: Wechat.hasBound()
+            bindWechat: WechatAccount.hasBound()
         };
 
         Poll.while(function () {
@@ -56,7 +56,7 @@ angular.module('starter.controllers', [])
         Poll.while(function () {
             return $scope.settings.bindWechat === true;
         }, function () {
-            $scope.settings.bindWechat = Wechat.hasBound();
+            $scope.settings.bindWechat = WechatAccount.hasBound();
         });
 
         function handleNotifyMessage(message) {
@@ -65,9 +65,9 @@ angular.module('starter.controllers', [])
 
         $scope.toggleWechatBinding = function () {
             if ($scope.settings.bindWechat) {
-                Wechat.bind()
+                WechatAccount.bind()
                     .then(function () {
-                        $scope.settings.bindWechat = Wechat.hasBound();
+                        $scope.settings.bindWechat = WechatAccount.hasBound();
                         if ($scope.settings.bindWechat) {
                             UI.toast('微信 绑定成功');
                         } else {
@@ -133,7 +133,7 @@ angular.module('starter.controllers', [])
 
         $scope.$watch('settings.bindWechat', function (newValue, oldValue) {
             if (oldValue && !newValue) {
-                Wechat.unbind();
+                WechatAccount.unbind();
             }
         });
 
@@ -153,7 +153,7 @@ angular.module('starter.controllers', [])
             Poll.while(function () {
                 return $scope.settings.bindWechat === true;
             }, function () {
-                $scope.settings.bindWechat = Wechat.hasBound();
+                $scope.settings.bindWechat = WechatAccount.hasBound();
             });
         });
     }])
