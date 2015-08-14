@@ -454,7 +454,18 @@ angular.module('starter.services', [])
 
                 WechatApp.auth(scope, function (response) {
                     if (response && response.code) {
-                        self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(nativeAppId, nativeAppSecret, nativeRedirectUri, response.code));
+                        self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(nativeAppId, nativeAppSecret, nativeRedirectUri, response.code))
+                            .then(function (data) {
+                                //alert(JSON.stringify(data));
+                                data.expires_in = (new Date().getTime() / 1000) + parseFloat(data.expires_in);
+
+                                Setting.save(Social.wechat, data);
+                                deferred.resolve(data);
+                                AppEvents.trigger(AppEvents.wechat.bound);
+                            }, function (reason) {
+                                UI.toast('绑定失败');
+                                deferred.reject(reason);
+                            });
                     } else {
                         deferred.reject('获取微信授权代码失败。' + JSON.stringify(response));
                     }
