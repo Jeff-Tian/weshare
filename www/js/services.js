@@ -395,21 +395,65 @@ angular.module('starter.services', [])
                 });
             },
 
+            inAppAuthorize: function (success, error) {
+                Social.authorize('https://open.weixin.qq.com/connect/oauth2/authorize?appid={0}&redirect_uri={1}&response_type=code&scope=snsapi_login&state={2}#wechat_redirect'.format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, success, error, function (url) {
+                    return getUrlParams(url).code;
+                });
+            },
+
             bind: function () {
                 var self = this;
                 var deferred = $q.defer();
 
-                WechatApp.isInstalled(function (installed) {
-                    if (installed) {
-                        self.nativeBind().then(deferred.resolve, deferred.reject, deferred.notify);
-                    } else {
-                        deferred.reject('没有检测到 微信 应用');
-                    }
-                }, function (reason) {
-                    self.webBind().then(deferred.resolve, deferred.reject, deferred.notify);
-                });
+                if (DeviceHelper.isWechatBrowser()) {
+                    self.inAppBind().then(deferred.resolve, deferred.reject, deferred.notify);
+                } else {
+                    WechatApp.isInstalled(function (installed) {
+                        if (installed) {
+                            self.nativeBind().then(deferred.resolve, deferred.reject, deferred.notify);
+                        } else {
+                            deferred.reject('没有检测到 微信 应用');
+                        }
+                    }, function (reason) {
+                        self.webBind().then(deferred.resolve, deferred.reject, deferred.notify);
+                    });
+                }
 
                 return deferred.promise;
+            },
+
+            inAppBind: function () {
+                function success(code) {
+                    self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(appId, appSecret, redirectUrl, code))
+                        .then(function (data) {
+                            //alert(JSON.stringify(data));
+                            data.expires_in = (new Date().getTime() / 1000) + parseFloat(data.expires_in);
+
+                            Setting.save('wechat', data);
+                            dfd.resolve(data);
+                            AppEvents.trigger(AppEvents.wechat.bound);
+                        }, function (reason) {
+                            UI.toast('绑定失败');
+                            dfd.reject(reason);
+                        });
+                }
+
+                function error(message) {
+                    UI.toast(message);
+                    dfd.reject(message);
+                }
+
+                var dfd = $q.defer();
+
+                this.tryGetCodeFromWebCallback(success, error, function () {
+                    Recover.save('WechatAccount.bind();');
+
+                    self.inAppAuthorize(success, error);
+
+                    dfd.notify('跳转中...');
+                });
+
+                return dfd.promise;
             },
 
             webBind: function () {
