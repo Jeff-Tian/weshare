@@ -1024,4 +1024,83 @@ angular.module('starter.services', [])
             }
         };
     }])
+
+    .directive('imageSelector', [function () {
+        return {
+            restrict: 'E',
+            templateUrl: 'templates/image-selector.html',
+            link: function ($scope, $element, attrs) {
+                if (typeof attrs.multiple !== 'undefined') {
+                    $($element).find('input[type="file"]').prop('multiple', true);
+                }
+            }
+        };
+    }])
+
+    .factory('FileReaderService', ['$q', '$log',
+        function ($q, $log) {
+            var onLoad = function (reader, deferred, scope) {
+                return function () {
+                    scope.$apply(function () {
+                        deferred.resolve(reader.result);
+                    });
+                };
+            };
+
+            var onError = function (reader, deferred, scope) {
+                return function () {
+                    scope.$apply(function () {
+                        deferred.reject(reader.result);
+                    });
+                };
+            };
+
+            var onProgress = function (reader, scope) {
+                return function (event) {
+                    scope.$broadcast("fileProgress", {
+                        total: event.total,
+                        loaded: event.loaded
+                    });
+                };
+            };
+
+            var getReader = function (deferred, scope) {
+                var reader = new FileReader();
+                reader.onload = onLoad(reader, deferred, scope);
+                reader.onerror = onError(reader, deferred, scope);
+                reader.onprogress = onProgress(reader, scope);
+                return reader;
+            };
+
+            var readAsDataURL = function (file, scope) {
+                var deferred = $q.defer();
+
+                var reader = getReader(deferred, scope);
+                reader.readAsDataURL(file);
+
+                return deferred.promise;
+            };
+
+            return {
+                readAsDataUrl: readAsDataURL,
+
+                dataUriToBlob: function (dataURI) {
+                    // convert base64/URLEncoded data component to raw binary data held in a string
+                    var byteString = atob(dataURI.split(',')[1]);
+                    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+                    var ab = new ArrayBuffer(byteString.length);
+                    var ia = new Uint8Array(ab);
+                    for (var i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+
+                    var bb = new Blob([ab], {
+                        "type": mimeString
+                    });
+                    return bb;
+                }
+            };
+        }
+    ])
 ;

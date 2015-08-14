@@ -20,13 +20,17 @@ angular.module('starter.controllers', [])
         };
     }])
 
-    .controller('DashCtrl', ['$scope', 'LocalJiy', '$state', 'UI', 'AppEvents', function ($scope, LocalJiy, $state, UI, AppEvents) {
+    .controller('DashCtrl', ['$scope', 'LocalJiy', '$state', 'UI', 'AppEvents', 'FileReaderService', function ($scope, LocalJiy, $state, UI, AppEvents, FileReaderService) {
         function initJiy() {
             $scope.jiy.text = '';
         }
 
         $scope.jiy = {
             text: '',
+            pictures: [{
+                index: 0,
+                picture: null
+            }],
             createdTime: null
         };
 
@@ -40,6 +44,43 @@ angular.module('starter.controllers', [])
             initJiy();
 
             $state.go('tab.chats');
+        };
+
+        $scope.pictureAdded = function (input) {
+            function makeCallback(offset) {
+                return function (result) {
+                    $scope.jiy.pictures[index + offset].picture = result;
+                    $scope.jiy.pictures[index + offset].file = input.files[offset];
+                };
+            }
+
+            var index = parseInt($(input).attr('index'));
+
+            for (var i = 0; i < input.files.length; i++) {
+                $scope.jiy.pictures.push({
+                    index: $scope.jiy.pictures.length,
+                    picture: null
+                });
+            }
+
+            for (i = 0; i < input.files.length; i++) {
+                FileReaderService.readAsDataUrl(input.files[i], $scope).then(makeCallback(i));
+            }
+        };
+
+        $scope.removePicture = function (picture, index, element) {
+            $scope.chat.pictures.splice(index, 1);
+
+            var space = $scope.chat.pictures.filter(function (p) {
+                return !p.picture;
+            });
+
+            if (!space.length) {
+                $scope.chat.pictures.push({
+                    index: $scope.chat.pictures.length,
+                    picture: null
+                });
+            }
         };
     }])
 
