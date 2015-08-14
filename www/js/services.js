@@ -234,6 +234,18 @@ angular.module('starter.services', [])
             jiyList.set(list);
         };
 
+        jiyList.update = function (jiy) {
+            var list = jiyList.fetchAsArray();
+
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].guid === jiy.guid) {
+                    list[i] = jiy;
+                }
+            }
+
+            jiyList.set(list);
+        };
+
         return jiyList;
     }])
 
@@ -261,9 +273,18 @@ angular.module('starter.services', [])
         };
     }])
 
-    .service('Proxy', [function () {
+    .service('Proxy', ['DeviceHelper', function (DeviceHelper) {
         this.proxyNative = function (url) {
             return '{0}?url={1}'.format('http://meiyanruhua.tao3w.com/proxy.php', encodeURIComponent(url)) + '&mode=native&send_cookies=true';
+        };
+
+        var self = this;
+        this.proxyNativeIfBrowser = function (url) {
+            if (DeviceHelper.isInBrowser()) {
+                return self.proxyNative(url);
+            }
+
+            return url;
         };
     }])
 
@@ -282,7 +303,7 @@ angular.module('starter.services', [])
                     },
 
                     unbind: function () {
-                        return self.unbind(socialMedia);
+                        self.unbind(socialMedia);
                     }
                 };
             },
@@ -582,15 +603,9 @@ angular.module('starter.services', [])
         var appId = '101202914';
         var redirectUri = 'http://www.meiyanruhua.com';
 
-        return {
-            hasBound: function () {
-                return Social.hasBound(Social.qq);
-            },
+        var qq = Social.create(Social.qq);
 
-            unbind: function () {
-                Setting.delete(Social.qq);
-            },
-
+        qq = angular.extend({}, qq, {
             bind: function () {
                 function success(access_token) {
                     self.getUidHandler(access_token, function (openId) {
@@ -699,7 +714,9 @@ angular.module('starter.services', [])
                     noCodePresentCallback();
                 }
             }
-        };
+        });
+
+        return qq;
     }])
 
     .factory('Weibo', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social) {
@@ -707,7 +724,9 @@ angular.module('starter.services', [])
         var appId = '1882668017';
         var clientSecret = '60611efdfb1af9a8bf51694b9dcbe7b3';
 
-        return {
+        var weibo = Social.create(Social.weibo);
+
+        weibo = angular.extend({}, weibo, {
             authorize: function (successCallback, errorCallback) {
                 return Social.authorize('https://api.weibo.com/oauth2/authorize?client_id={0}&response_type=code&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
@@ -828,12 +847,50 @@ angular.module('starter.services', [])
                 });
             },
 
-            hasBound: function () {
-                var res = Social.hasBound(Social.weibo);
-                console.log('bound = ' + res);
-                return res;
+            getAccessToken: function () {
+                var dfd = $q.defer();
+
+                var access_token = Setting.fetch(Social.weibo).access_token;
+
+                if (access_token) {
+                    dfd.resolve(access_token);
+                } else {
+                    this.bind().then(dfd.resolve, dfd.reject, dfd.notify);
+                }
+
+                return dfd.promise;
+            },
+
+            publish: function (text) {
+                return this.getAccessToken()
+                    .then(function (access_token) {
+                        var url = Proxy.proxyNativeIfBrowser('https://api.weibo.com/2/statuses/upload_url_text.json');
+
+                        var data = {
+                            access_token: access_token,
+                            status: text,
+                            visible: 0,
+                            lat: 0,
+                            long: 0,
+                            rip: '127.0.0.1',
+                            url: 'http://zizhujy.com',
+                            // important to add 10 spaces for pic_id
+                            pic_id: '          '
+                        };
+
+                        var res = $http({
+                            method: 'POST',
+                            url: url,
+                            data: urlParams(data),
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                        });
+
+                        return res;
+                    });
             }
-        };
+        });
+
+        return weibo;
     }])
 
     .service('UI', ['$http', '$window', '$q', '$ionicLoading', '$timeout', function ($http, $window, $q, $ionicLoading, $timeout) {

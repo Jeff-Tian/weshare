@@ -56,8 +56,30 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', function ($scope, $stateParams, Chats) {
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social) {
         $scope.chat = Chats.get($stateParams.chatId);
+        $scope.publish = function (socialMedia, chat) {
+            Weibo.publish(chat.text)
+                .then(function (response) {
+                    chat.weibo = {
+                        publishTime: new Date().toISOString()
+                    };
+
+                    LocalJiy.update(chat);
+
+                    UI.toast('成功发布到微博');
+                }, function (reason) {
+                    if (reason.error_code == 20019) {
+                        UI.toast('发布重复内容到微博失败 ' + reason.error);
+                    } else {
+                        UI.toast(reason);
+                    }
+                });
+        };
+
+        AppEvents.handle(AppEvents.weibo.bound, function () {
+            $scope.publish(Social.weibo, $scope.chat);
+        });
     }])
 
     .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount) {
