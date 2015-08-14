@@ -8,22 +8,52 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('DashCtrl', [function ($scope) {
+    .controller('DashCtrl', ['$scope', 'LocalJiy', '$state', 'UI', 'AppEvents', function ($scope, LocalJiy, $state, UI, AppEvents) {
+        function initJiy() {
+            $scope.jiy.text = '';
+        }
+
+        $scope.jiy = {
+            text: '',
+            createdTime: null
+        };
+
+        $scope.saveDraft = function () {
+            $scope.jiy.createdTime = new Date().toISOString();
+            LocalJiy.append($scope.jiy);
+
+            UI.toast('已保存草稿');
+            AppEvents.trigger(AppEvents.jiy.saved);
+
+            initJiy();
+
+            $state.go('tab.chats');
+        };
     }])
 
-    .controller('ChatsCtrl', ['$scope', 'Chats', function ($scope, Chats) {
+    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', function ($scope, Chats, AppEvents) {
         // With the new view caching in Ionic, Controllers are only called
         // when they are recreated or on app start, instead of every page change.
         // To listen for when this page is active (for example, to refresh data),
         // listen for the $ionicView.enter event:
         //
-        //$scope.$on('$ionicView.enter', function(e) {
+        //$scope.$on('$ionicView.enter', function (e) {
+        //    $scope.doRefresh();
         //});
 
         $scope.chats = Chats.all();
         $scope.remove = function (chat) {
             Chats.remove(chat);
         };
+
+        $scope.doRefresh = function () {
+            Chats.refresh();
+            $scope.chats = Chats.all();
+        };
+
+        AppEvents.handle(AppEvents.jiy.saved, function () {
+            $scope.doRefresh();
+        });
     }])
 
     .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', function ($scope, $stateParams, Chats) {

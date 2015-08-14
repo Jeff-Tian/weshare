@@ -1,6 +1,10 @@
 angular.module('starter.services', [])
 
-    .factory('Chats', [function () {
+    .factory('Chats', ['LocalJiy', function (LocalJiy) {
+        function refresh() {
+            chats = LocalJiy.fetchAsArray().reverse();
+        }
+
         // Might use a resource here that returns a JSON array
 
         // Some fake testing data
@@ -31,16 +35,21 @@ angular.module('starter.services', [])
             face: 'https://pbs.twimg.com/profile_images/578237281384841216/R3ae1n61.png'
         }];
 
+        refresh();
+
         return {
+            refresh: refresh,
+
             all: function () {
                 return chats;
             },
             remove: function (chat) {
                 chats.splice(chats.indexOf(chat), 1);
+                LocalJiy.remove(chat);
             },
             get: function (chatId) {
                 for (var i = 0; i < chats.length; i++) {
-                    if (chats[i].id === parseInt(chatId)) {
+                    if (chats[i].guid === chatId || parseInt(chatId) === i) {
                         return chats[i];
                     }
                 }
@@ -160,6 +169,16 @@ angular.module('starter.services', [])
                     }
                 },
 
+                fetchAsArray: function (key) {
+                    var me = this.get() || [];
+
+                    if (!key) {
+                        return me;
+                    } else {
+                        return me[key] || [];
+                    }
+                },
+
                 save: function (key, value) {
                     var me = this.fetch();
                     me[key] = angular.extend({}, me[key], value);
@@ -183,6 +202,39 @@ angular.module('starter.services', [])
 
     .factory('Setting', ['StorageFactoryService', function (StorageFactoryService) {
         return StorageFactoryService.create('jiy_setting');
+    }])
+
+    .factory('LocalJiy', ['StorageFactoryService', function (StorageFactoryService) {
+        function guid() {
+            function s4() {
+                return Math.floor((1 + Math.random()) * 0x10000)
+                    .toString(16)
+                    .substring(1);
+            }
+
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                s4() + '-' + s4() + s4() + s4();
+        }
+
+        var jiyList = StorageFactoryService.create('jiy_list');
+
+        jiyList.append = function (jiy) {
+            var list = jiyList.fetchAsArray();
+            jiy.guid = guid();
+
+            list.push(jiy);
+
+            jiyList.set(list);
+        };
+
+        jiyList.remove = function (jiy) {
+            var list = jiyList.fetchAsArray();
+            list.splice(list.indexOf(jiy), 1);
+
+            jiyList.set(list);
+        };
+
+        return jiyList;
     }])
 
     .factory('Recover', ['StorageFactoryService', function (StorageFactoryService) {
@@ -879,6 +931,10 @@ angular.module('starter.services', [])
             wechat: {
                 bound: 'wechat:bound',
                 unbound: 'wechat:unbound'
+            },
+
+            jiy: {
+                saved: 'jiy:saved'
             },
 
             trigger: function (name) {
