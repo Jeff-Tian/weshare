@@ -2,7 +2,7 @@ angular.module('starter.services', [])
 
     .factory('Chats', ['LocalJiy', function (LocalJiy) {
         function refresh() {
-            chats = LocalJiy.fetchAsArray().reverse();
+            chats = LocalJiy.fetchAsArray().unique(false).reverse();
         }
 
         // Might use a resource here that returns a JSON array
@@ -220,10 +220,17 @@ angular.module('starter.services', [])
 
         jiyList.append = function (jiy) {
             var list = jiyList.fetchAsArray();
-            jiy.guid = guid();
+            if (!jiy.guid) {
+                jiy.guid = guid();
+            }
+
+            if (this.getByGuid(jiy.guid)) {
+                this.update(jiy);
+
+                return;
+            }
 
             list.push(jiy);
-
             jiyList.set(list);
         };
 
@@ -244,6 +251,18 @@ angular.module('starter.services', [])
             }
 
             jiyList.set(list);
+        };
+
+        jiyList.getByGuid = function (guid) {
+            var list = jiyList.fetchAsArray();
+
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].guid === jiy.guid) {
+                    return list[i];
+                }
+            }
+
+            return null;
         };
 
         return jiyList;
@@ -852,7 +871,7 @@ angular.module('starter.services', [])
 
                 var access_token = Setting.fetch(Social.weibo).access_token;
 
-                if (access_token) {
+                if (access_token && this.hasBound()) {
                     dfd.resolve(access_token);
                 } else {
                     this.bind().then(dfd.resolve, dfd.reject, dfd.notify);
@@ -862,6 +881,8 @@ angular.module('starter.services', [])
             },
 
             publish: function (text) {
+                var self = this;
+
                 return this.getAccessToken()
                     .then(function (access_token) {
                         var url = Proxy.proxyNativeIfBrowser('https://api.weibo.com/2/statuses/upload_url_text.json');

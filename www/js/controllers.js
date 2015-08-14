@@ -1,11 +1,23 @@
 angular.module('starter.controllers', [])
 
-    .controller('AppCtrl', ['Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function (Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
+    .controller('AppCtrl', ['$scope', 'Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function ($scope, Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
                 eval(Recover.get());
             }
         });
+
+        $scope.showDebugView = false;
+        $scope.toggleDebugView = function ($event) {
+            if (true) {
+                $scope.showDebugView = !$scope.showDebugView;
+                $('#debug-view').toggle();
+            }
+        };
+
+        $scope.clearDebugView = function () {
+            $('#debug-view-log, #debug-view-error').text('');
+        };
     }])
 
     .controller('DashCtrl', ['$scope', 'LocalJiy', '$state', 'UI', 'AppEvents', function ($scope, LocalJiy, $state, UI, AppEvents) {
@@ -59,22 +71,30 @@ angular.module('starter.controllers', [])
     .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social) {
         $scope.chat = Chats.get($stateParams.chatId);
         $scope.publish = function (socialMedia, chat) {
+            function publishSuccess(response) {
+                chat.weibo = {
+                    publishTime: new Date().toISOString()
+                };
+
+                LocalJiy.update(chat);
+                UI.toast('成功发布到微博');
+            }
+
+            function publishFail(reason) {
+                if (reason.error_code == 20019 || reason.data.error_code == 20019) {
+                    UI.toast('发布重复内容到微博失败 ' + reason.error);
+                } else if (reason.error_code == 21332 || reason.data.error_code == 21332) {
+                    Weibo.bind().then(function () {
+                        Weibo.publish(chat.text).then(publishSuccess, publishFail);
+                    })
+                } else {
+                    UI.toast(reason, 'long');
+                    alert(JSON.stringify(reason));
+                }
+            }
+
             Weibo.publish(chat.text)
-                .then(function (response) {
-                    chat.weibo = {
-                        publishTime: new Date().toISOString()
-                    };
-
-                    LocalJiy.update(chat);
-
-                    UI.toast('成功发布到微博');
-                }, function (reason) {
-                    if (reason.error_code == 20019) {
-                        UI.toast('发布重复内容到微博失败 ' + reason.error);
-                    } else {
-                        UI.toast(reason);
-                    }
-                });
+                .then(publishSuccess, publishFail);
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
