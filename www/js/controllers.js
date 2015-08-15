@@ -66,18 +66,20 @@ angular.module('starter.controllers', [])
             for (i = 0; i < input.files.length; i++) {
                 FileReaderService.readAsDataUrl(input.files[i], $scope).then(makeCallback(i));
             }
+
+            input.value = '';
         };
 
         $scope.removePicture = function (picture, index, element) {
-            $scope.chat.pictures.splice(index, 1);
+            $scope.jiy.pictures.splice(index, 1);
 
-            var space = $scope.chat.pictures.filter(function (p) {
+            var space = $scope.jiy.pictures.filter(function (p) {
                 return !p.picture;
             });
 
             if (!space.length) {
-                $scope.chat.pictures.push({
-                    index: $scope.chat.pictures.length,
+                $scope.jiy.pictures.push({
+                    index: $scope.jiy.pictures.length,
                     picture: null
                 });
             }

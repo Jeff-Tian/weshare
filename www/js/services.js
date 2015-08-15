@@ -257,7 +257,7 @@ angular.module('starter.services', [])
             var list = jiyList.fetchAsArray();
 
             for (var i = 0; i < list.length; i++) {
-                if (list[i].guid === jiy.guid) {
+                if (list[i].guid === guid) {
                     return list[i];
                 }
             }
