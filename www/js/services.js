@@ -323,6 +323,34 @@ angular.module('starter.services', [])
 
                     unbind: function () {
                         self.unbind(socialMedia);
+                    },
+
+                    getAccessToken: function () {
+                        var dfd = $q.defer();
+
+                        var access_token = Setting.fetch(socialMedia).access_token;
+
+                        if (access_token && this.hasBound()) {
+                            dfd.resolve(access_token);
+                        } else {
+                            this.bind().then(dfd.resolve, dfd.reject, dfd.notify);
+                        }
+
+                        return dfd.promise;
+                    },
+
+                    getAuthData: function () {
+                        var dfd = $q.defer();
+
+                        var d = Setting.fetch(socialMedia);
+
+                        if (d && this.hasBound()) {
+                            dfd.resolve(d);
+                        } else {
+                            this.bind().then(dfd.resolve, dfd.reject, dfd.notify);
+                        }
+
+                        return dfd.promise;
                     }
                 };
             },
@@ -631,6 +659,7 @@ angular.module('starter.services', [])
                         Setting.save('qq', {openid: openId});
 
                         deferred.resolve(Setting.fetch('qq'));
+                        AppEvents.trigger(AppEvents.qq.bound);
                     }, function () {
                         deferred.reject('没有得到 QQ openid, 绑定 QQ 失败');
                     });
@@ -641,8 +670,8 @@ angular.module('starter.services', [])
                     deferred.reject(message);
                 }
 
-                var url = 'https://graph.qq.com/oauth2.0/authorize?response_type=token&client_id={0}&redirect_uri={1}&state={2}'
-                    .format(appId, encodeURIComponent(redirectUri), AppUrlHelper.encodeCurrentState());
+                var url = 'https://graph.qq.com/oauth2.0/authorize?response_type=token&client_id={0}&redirect_uri={1}&state={2}&scope={3}'
+                    .format(appId, encodeURIComponent(redirectUri), AppUrlHelper.encodeCurrentState(), encodeURIComponent('get_user_info,add_t'));
                 var self = this;
 
                 var deferred = $q.defer();
@@ -732,6 +761,38 @@ angular.module('starter.services', [])
                 else {
                     noCodePresentCallback();
                 }
+            },
+
+            publish: function (text, pictures) {
+                var self = this;
+
+                return this.getAuthData()
+                    .then(function (authData) {
+                        var url = Proxy.proxyNativeIfBrowser('https://graph.qq.com/t/add_t');
+
+                        var data = {
+                            access_token: authData.access_token,
+                            format: 'json',
+                            content: encodeURIComponent(text),
+                            clientip: encodeURIComponent('120.26.216.41'),
+                            longitude: '0',
+                            latitude: '0',
+                            syncflag: 0,
+                            compatibleflag: 0,
+                            openid: authData.openid,
+                            appid: appId,
+                            oauth_consumer_key: appId
+                        };
+
+                        var res = $http({
+                            method: 'POST',
+                            url: url,
+                            data: urlParams(data),
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                        });
+
+                        return res;
+                    });
             }
         });
 
@@ -894,9 +955,9 @@ angular.module('starter.services', [])
                             lat: 0,
                             long: 0,
                             rip: '127.0.0.1',
-                            url: 'http://zizhujy.com',
+                            url: 'http://zizhujy.com'//,
                             // important to add 10 spaces for pic_id
-                            pic_id: '          '
+                            //pic_id: '          '
                         };
 
                         var res = $http({
@@ -1009,6 +1070,11 @@ angular.module('starter.services', [])
             wechat: {
                 bound: 'wechat:bound',
                 unbound: 'wechat:unbound'
+            },
+
+            qq: {
+                bound: 'qq:bound',
+                unbound: 'qq:unbound'
             },
 
             jiy: {

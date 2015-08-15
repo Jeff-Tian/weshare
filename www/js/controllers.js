@@ -111,37 +111,76 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social) {
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ) {
         $scope.chat = Chats.get($stateParams.chatId);
         $scope.publish = function (socialMedia, chat) {
             function publishSuccess(response) {
-                chat.weibo = {
-                    publishTime: new Date().toISOString()
-                };
+                function getName() {
+                    if (socialMedia === 'weibo') {
+                        return '微博';
+                    }
+
+                    if (socialMedia === 'qq') {
+                        return 'QQ';
+                    }
+                }
+
+                if (socialMedia === 'qq') {
+                    if (response.data.ret != 0) {
+                        publishFail(response.data);
+
+                        return;
+                    }
+                }
+
+                chat[socialMedia] = response.data;
 
                 LocalJiy.update(chat);
-                UI.toast('成功发布到微博');
+                UI.toast('成功发布到 ' + getName());
             }
 
+            //{"ret":-1,"msg":"client request's parameters are invalid, invalid openid"}
             function publishFail(reason) {
-                if (reason.error_code == 20019 || reason.data.error_code == 20019) {
-                    UI.toast('发布重复内容到微博失败 ' + reason.error);
-                } else if (reason.error_code == 21332 || reason.data.error_code == 21332) {
-                    Weibo.bind().then(function () {
-                        Weibo.publish(chat.text).then(publishSuccess, publishFail);
-                    })
+                if (socialMedia === 'weibo') {
+                    if (reason.error_code == 20019 || reason.data.error_code == 20019) {
+                        UI.toast('发布重复内容到微博失败 ' + reason.error);
+                    } else if (reason.error_code == 21332 || reason.data.error_code == 21332) {
+                        Weibo.bind().then(function () {
+                            Weibo.publish(chat.text).then(publishSuccess, publishFail);
+                        })
+                    } else {
+                        UI.toast(reason, 'long');
+                    }
+                } else if (socialMedia === 'qq') {
+                    if (reason.ret == 100030) {
+                        QQ.bind().then(function () {
+                            QQ.publish(chat.text).then(publishSuccess, publishFail);
+                        });
+                    }
+
+                    UI.toast(reason.msg, 'long');
                 } else {
-                    UI.toast(reason, 'long');
-                    alert(JSON.stringify(reason));
+                    UI.toast(reason);
                 }
             }
 
-            Weibo.publish(chat.text)
-                .then(publishSuccess, publishFail);
+            if (socialMedia === 'weibo') {
+                Weibo.publish(chat.text)
+                    .then(publishSuccess, publishFail);
+            } else if (socialMedia === 'qq') {
+                QQ.publish(chat.text)
+                    .then(publishSuccess, publishFail);
+            } else {
+                UI.toast('暂不支持发布到 ' + socialMedia);
+            }
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
             $scope.publish(Social.weibo, $scope.chat);
+        });
+
+        AppEvents.handle(AppEvents.qq.bound, function () {
+            $scope.publish(Social.qq, $scope.chat);
         });
     }])
 
