@@ -955,9 +955,9 @@ angular.module('starter.services', [])
                             lat: 0,
                             long: 0,
                             rip: '127.0.0.1',
-                            url: 'http://zizhujy.com'//,
+                            url: 'http://zizhujy.com',
                             // important to add 10 spaces for pic_id
-                            //pic_id: '          '
+                            pic_id: '          '
                         };
 
                         var res = $http({
