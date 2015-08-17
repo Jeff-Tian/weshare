@@ -76,6 +76,16 @@ angular.module('starter.services', [])
         this.encodeCurrentState = function () {
             return encodeURIComponent(this.extractStateUrl(this.getCurrentUrl()));
         };
+
+        this.getCurrentUrlWithoutHash = function () {
+            var url = this.getCurrentUrl();
+            var indexOfHash = url.indexOf('#');
+            if (indexOfHash >= 0) {
+                url = url.substr(0, indexOfHash);
+            }
+
+            return url;
+        };
     }])
     .factory('DeviceHelper', [function () {
         return {
@@ -204,7 +214,7 @@ angular.module('starter.services', [])
         return StorageFactoryService.create('jiy_setting');
     }])
 
-    .factory('LocalJiy', ['StorageFactoryService', function (StorageFactoryService) {
+    .factory('Guid', [function () {
         function guid() {
             function s4() {
                 return Math.floor((1 + Math.random()) * 0x10000)
@@ -216,6 +226,13 @@ angular.module('starter.services', [])
                 s4() + '-' + s4() + s4() + s4();
         }
 
+        return {
+            guid: guid
+        };
+    }])
+
+    .factory('LocalJiy', ['StorageFactoryService', "Guid", function (StorageFactoryService, Guid) {
+        var guid = Guid.guid;
         var jiyList = StorageFactoryService.create('jiy_list');
 
         jiyList.append = function (jiy) {
@@ -443,7 +460,7 @@ angular.module('starter.services', [])
         return wechatApp;
     }])
 
-    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp) {
+    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid) {
         var appId = 'wx73e96afd84f7b784';
         var appSecret = 'a83524d630aeebfa5bf5a248d56ed32c';
         var redirectUrl = 'http://huaqq.cn';
@@ -648,39 +665,258 @@ angular.module('starter.services', [])
             publish: function (text, pictures) {
                 var dfd = $q.defer();
 
-                WechatApp.share({
-                    text: "This is just a plain string",
-                    message: {
-                        title: text,
-                        description: text,
-                        thumb: '',
-                        mediaTagName: "Jiy",
-                        messageExt: "叽歪",
-                        messageAction: "<action>dotalist</action>",
-                        media: {
-                            type: Wechat.Type.LINK,
-                            webpageUrl: 'http://zizhujy.com'
-                        }
-                    },
-                    scene: Wechat.Scene.TIMELINE   // share to Timeline
-                }, function () {
-                    var m = '已分享到朋友圈';
-                    UI.toast(m);
-                    dfd.resolve(m);
-                }, function (reason) {
-                    if (reason === '用户点击取消并返回') {
-                        var m = '分享取消';
+                if (DeviceHelper.isWechatBrowser()) {
+                    WeixinJSBridge.invoke('shareTimeline', {
+                        "img_url": 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
+                        "img_width": "640",
+                        "img_height": "640",
+                        "link": 'http://zizhujy.com',
+                        "desc": text,
+                        "title": text
+                    }, function (res) {
+                        UI.toast(res);
+                    });
+                } else {
+                    WechatApp.share({
+                        text: "This is just a plain string",
+                        message: {
+                            title: text,
+                            description: text,
+                            thumb: '',
+                            mediaTagName: "Jiy",
+                            messageExt: "叽歪",
+                            messageAction: "<action>dotalist</action>",
+                            media: {
+                                type: Wechat.Type.LINK,
+                                webpageUrl: 'http://zizhujy.com'
+                            }
+                        },
+                        scene: Wechat.Scene.TIMELINE   // share to Timeline
+                    }, function () {
+                        var m = '已分享到朋友圈';
                         UI.toast(m);
-                        dfd.reject(m)
-                    } else {
-                        UI.toast(reason);
-                        dfd.reject(reason);
-                    }
-                });
+                        dfd.resolve(m);
+                    }, function (reason) {
+                        if (reason === '用户点击取消并返回') {
+                            var m = '分享取消';
+                            UI.toast(m);
+                            dfd.reject(m)
+                        } else {
+                            UI.toast(reason);
+                            dfd.reject(reason);
+                        }
+                    });
+                }
 
                 return dfd.promise;
             }
         });
+
+        var wechatPayAccessTokenKey = 'wechatPayAccessToken';
+        var wechatPayJsApiTicketKey = 'wechatPayJsApiTicket';
+
+        WechatAccount.getCachedAccessToken = function () {
+            var wechatPayAccessToken = Setting.fetch(wechatPayAccessTokenKey);
+
+            if (!wechatPayAccessToken.access_token) {
+                return undefined;
+            }
+
+            if (hasExpired(wechatPayAccessToken.expires_in)) {
+                return undefined;
+            }
+
+            return wechatPayAccessToken.access_token;
+        };
+
+        function hasExpired(seconds) {
+            var now = new Date().getTime() / 1000;
+
+            return now > parseFloat(seconds);
+        }
+
+        WechatAccount.getCachedJsApiTicket = function () {
+            var wechatPayJsApiTicket = Setting.fetch(wechatPayJsApiTicketKey);
+
+            if (!wechatPayJsApiTicket.ticket) {
+                return undefined;
+            }
+
+            if (hasExpired(wechatPayJsApiTicket.expires_in)) {
+                return undefined;
+            }
+
+            return wechatPayJsApiTicket.ticket;
+        };
+
+        WechatAccount.getAccessToken = function () {
+            var deferred = $q.defer();
+
+            var cachedAccessToken = self.getCachedAccessToken();
+
+            if (cachedAccessToken) {
+                deferred.resolve(cachedAccessToken);
+            } else {
+                var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}'.format(appId, appSecret);
+
+                if (DeviceHelper.isInBrowser()) {
+                    url = Proxy.proxyNative(url);
+                }
+
+                $http({
+                    method: 'GET',
+                    url: url
+                }).success(function (data) {
+                    data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+
+                    Setting.save(wechatPayAccessTokenKey, data);
+
+                    deferred.resolve(data.access_token);
+                }).error(function (reason) {
+                    deferred.reject(reason);
+                });
+            }
+
+            return deferred.promise;
+        };
+
+        WechatAccount.getJsApiTicket = function () {
+            var deferred = $q.defer();
+
+            var cache = WechatAccount.getCachedJsApiTicket();
+
+            if (cache) {
+                deferred.resolve(cache);
+            } else {
+                WechatAccount.getAccessToken()
+                    .then(function (token) {
+                        return token;
+                    }, function (reason) {
+                        deferred.reject(reason);
+                    }).then(function (token) {
+                        var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
+
+                        if (DeviceHelper.isInBrowser()) {
+                            url = Proxy.proxyNative(url);
+                        }
+
+                        $http({
+                            method: 'GET',
+                            url: url
+                        }).success(function (data) {
+                            if (data.errcode === 0) {
+                                data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+                                Setting.save(wechatPayJsApiTicketKey, data);
+                                deferred.resolve(data.ticket);
+                            } else {
+                                deferred.reject(data.errmsg);
+                            }
+                        }).error(function (reason) {
+                            deferred.reject(reason);
+                        });
+                    }, function (reason) {
+                        deferred.reject(reason);
+                    });
+            }
+
+            return deferred.promise;
+        };
+
+        WechatAccount.sha1 = function (s) {
+            var shaObj = new jsSHA('SHA-1', 'TEXT');
+            shaObj.update(s);
+            return shaObj.getHash('HEX');
+        };
+
+        WechatAccount.sha1Sign = function (config, ticket) {
+            var s = 'jsapi_ticket=' + ticket + '&noncestr=' + config.nonceStr + '&timestamp=' + config.timestamp + '&url=' + AppUrlHelper.getCurrentUrlWithoutHash();
+
+            config.signature = self.sha1(s);
+
+            return config.signature;
+        };
+
+        var configured = false;
+        WechatAccount.execute = function (method) {
+            if (configured) {
+                method();
+
+                return;
+            }
+
+            WechatAccount.getJsApiTicket().then(function (ticket) {
+                var config = {
+                    debug: false,
+                    appId: appId,
+                    timestamp: Math.floor(new Date(time).getTime() / 1000),
+                    nonceStr: WechatAccount.guid().replace('-', ''),
+                    jsApiList: [
+                        'checkJsApi',
+                        'onMenuShareTimeline',
+                        'onMenuShareAppMessage',
+                        'onMenuShareQQ',
+                        'onMenuShareWeibo',
+                        'onMenuShareQZone',
+                        'hideMenuItems',
+                        'showMenuItems',
+                        'hideAllNonBaseMenuItem',
+                        'showAllNonBaseMenuItem',
+                        'translateVoice',
+                        'startRecord',
+                        'stopRecord',
+                        'onRecordEnd',
+                        'playVoice',
+                        'pauseVoice',
+                        'stopVoice',
+                        'uploadVoice',
+                        'downloadVoice',
+                        'chooseImage',
+                        'previewImage',
+                        'uploadImage',
+                        'downloadImage',
+                        'getNetworkType',
+                        'openLocation',
+                        'getLocation',
+                        'hideOptionMenu',
+                        'showOptionMenu',
+                        'closeWindow',
+                        'scanQRCode',
+                        'chooseWXPay',
+                        'openProductSpecificView',
+                        'addCard',
+                        'chooseCard',
+                        'openCard'
+                    ]
+                };
+
+                WechatAccount.sha1Sign(config, ticket);
+
+                wx.config(config);
+
+                AppEvents.triggerLoading();
+
+                wx.ready(function () {
+                    AppEvents.triggerLoadingHide();
+                    configured = true;
+                    method();
+                });
+
+                //if (typeof WeixinJSBridge == 'undefined') {
+                //    if (document.addEventListener) {
+                //        document.addEventListener('WeixinJSBridgeReady', method, false);
+                //    } else if (document.attachEvent) {
+                //        document.attachEvent('WeixinJSBridgeReady', method);
+                //        document.attachEvent('onWeixinJSBridgeReady', method);
+                //    } else {
+                //        console.error('不能执行指定方法：' + method);
+                //    }
+                //} else {
+                //    method();
+                //}
+            }, function (reason) {
+                UI.toast('调用微信接口失败：' + reason);
+            });
+        };
 
         return WechatAccount;
     }])
@@ -1126,6 +1362,14 @@ angular.module('starter.services', [])
 
             handle: function (name, callback) {
                 return $rootScope.$on(name, callback);
+            },
+
+            triggerLoading: function () {
+                return this.trigger(this.loading.show);
+            },
+
+            triggerLoadingHide: function () {
+                return this.trigger(this.loading.hide);
             }
         };
     }])
