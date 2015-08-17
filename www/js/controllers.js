@@ -111,7 +111,7 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ) {
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount) {
         $scope.chat = Chats.get($stateParams.chatId);
         $scope.publish = function (socialMedia, chat) {
             function publishSuccess(response) {
@@ -122,6 +122,10 @@ angular.module('starter.controllers', [])
 
                     if (socialMedia === 'qq') {
                         return 'QQ';
+                    }
+
+                    if (socialMedia === 'wechat') {
+                        return '微信'
                     }
                 }
 
@@ -170,6 +174,9 @@ angular.module('starter.controllers', [])
             } else if (socialMedia === 'qq') {
                 QQ.publish(chat.text)
                     .then(publishSuccess, publishFail);
+            } else if (socialMedia === 'wechat') {
+                WechatAccount.publish(chat.text)
+                    .then(publishSuccess, publishFail);
             } else {
                 UI.toast('暂不支持发布到 ' + socialMedia);
             }
@@ -181,6 +188,10 @@ angular.module('starter.controllers', [])
 
         AppEvents.handle(AppEvents.qq.bound, function () {
             $scope.publish(Social.qq, $scope.chat);
+        });
+
+        AppEvents.handle(AppEvents.wechat.bound, function () {
+            $scope.publish(Social.wechat, $scope.chat);
         });
     }])
 

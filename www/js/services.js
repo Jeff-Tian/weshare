@@ -424,7 +424,9 @@ angular.module('starter.services', [])
                     notInstalled(defaultMessage);
                 },
 
-                auth: noop
+                auth: noop,
+
+                share: noop
             };
         } else {
             wechatApp = Wechat;
@@ -434,6 +436,7 @@ angular.module('starter.services', [])
             if (typeof Wechat !== 'undefined') {
                 wechatApp.isInstalled = Wechat.isInstalled;
                 wechatApp.auth = Wechat.auth;
+                wechatApp.share = Wechat.share;
             }
         });
 
@@ -640,6 +643,47 @@ angular.module('starter.services', [])
                 });
 
                 return deferred.promise;
+            },
+
+            publish: function (text, pictures) {
+                var self = this;
+
+                return this.getAuthData()
+                    .then(function (authData) {
+                        var dfd = $q.defer();
+
+                        WechatApp.share({
+                            text: text,
+                            message: {
+                                title: text,
+                                description: text,
+                                thumb: '',
+                                mediaTagName: "Jiy",
+                                messageExt: "叽歪",
+                                messageAction: "<action>dotalist</action>",
+                                media: {
+                                    type: Wechat.Type.LINK,
+                                    webpageUrl: 'http://zizhujy.com'
+                                }
+                            },
+                            scene: Wechat.Scene.TIMELINE   // share to Timeline
+                        }, function () {
+                            var m = '已分享到朋友圈';
+                            UI.toast(m);
+                            dfd.resolve(m);
+                        }, function (reason) {
+                            if (reason === '用户点击取消并返回') {
+                                var m = '分享取消';
+                                UI.toast(m);
+                                dfd.reject(m)
+                            } else {
+                                UI.toast(reason);
+                                dfd.reject(reason);
+                            }
+                        });
+
+                        return dfd.promise;
+                    });
             }
         });
 
