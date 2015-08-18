@@ -443,7 +443,13 @@ angular.module('starter.services', [])
 
                 auth: noop,
 
-                share: noop
+                share: function () {
+                    noop('请在微信浏览器中操作或者下载 "叽歪" APP操作');
+                },
+
+                Type: {},
+
+                Scene: {}
             };
         } else {
             wechatApp = Wechat;
@@ -451,9 +457,9 @@ angular.module('starter.services', [])
 
         ionic.Platform.ready(function () {
             if (typeof Wechat !== 'undefined') {
-                wechatApp.isInstalled = Wechat.isInstalled;
-                wechatApp.auth = Wechat.auth;
-                wechatApp.share = Wechat.share;
+                for (var key in Wechat) {
+                    wechatApp[key] = Wechat[key];
+                }
             }
         });
 
@@ -468,6 +474,10 @@ angular.module('starter.services', [])
         var nativeRedirectUri = 'http://www.huaoo.cc';
         var nativeAppId = 'wxc1ad5744c8f95cec';
         var nativeAppSecret = '838c73a021f875a96c2d718aab978665';
+
+        var officialAccountAppId = 'wx7bb4e0702e9f7956';
+        var officialAccountKey = '7c646671f505c200ff158a6f2b27cdde';
+        var officialAccountAppSecret = 'd1e7a2e95dfdeb92ac67136b3fac4f23';
 
         var WechatAccount = Social.create(Social.wechat);
 
@@ -665,16 +675,27 @@ angular.module('starter.services', [])
             publish: function (text, pictures) {
                 var dfd = $q.defer();
 
-                if (DeviceHelper.isWechatBrowser()) {
-                    WeixinJSBridge.invoke('shareTimeline', {
-                        "img_url": 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
-                        "img_width": "640",
-                        "img_height": "640",
-                        "link": 'http://zizhujy.com',
-                        "desc": text,
-                        "title": text
-                    }, function (res) {
-                        UI.toast(res);
+                if (DeviceHelper.isWechatBrowser() || true) {
+                    WechatAccount.execute(function () {
+                        alert('hello');
+                        wx.scanQRCode();
+
+                        //wx.onMenuShareTimeline({
+                        //    title: text,
+                        //    link: 'http://zizhujy.com',
+                        //    imgUrl: 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
+                        //    success: function () {
+                        //        alert('success');
+                        //        UI.toast('分享成功');
+                        //        // Callback function executed after a user confirms sharing
+                        //    },
+                        //    cancel: function (reason) {
+                        //        alert('失败' + reason);
+                        //        UI.toast('分享失败 ' + reason);
+                        //        // Callback function executed after a user cancels sharing
+                        //    }
+                        //});
+
                     });
                 } else {
                     WechatApp.share({
@@ -687,11 +708,11 @@ angular.module('starter.services', [])
                             messageExt: "叽歪",
                             messageAction: "<action>dotalist</action>",
                             media: {
-                                type: Wechat.Type.LINK,
+                                type: WechatApp.Type.LINK,
                                 webpageUrl: 'http://zizhujy.com'
                             }
                         },
-                        scene: Wechat.Scene.TIMELINE   // share to Timeline
+                        scene: WechatApp.Scene.TIMELINE   // share to Timeline
                     }, function () {
                         var m = '已分享到朋友圈';
                         UI.toast(m);
@@ -752,12 +773,13 @@ angular.module('starter.services', [])
         WechatAccount.getAccessToken = function () {
             var deferred = $q.defer();
 
-            var cachedAccessToken = self.getCachedAccessToken();
+            var cachedAccessToken = WechatAccount.getCachedAccessToken();
 
+            cachedAccessToken = null;
             if (cachedAccessToken) {
                 deferred.resolve(cachedAccessToken);
             } else {
-                var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}'.format(appId, appSecret);
+                var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}'.format(officialAccountAppId, officialAccountAppSecret);
 
                 if (DeviceHelper.isInBrowser()) {
                     url = Proxy.proxyNative(url);
@@ -784,6 +806,7 @@ angular.module('starter.services', [])
             var deferred = $q.defer();
 
             var cache = WechatAccount.getCachedJsApiTicket();
+            cache = null;
 
             if (cache) {
                 deferred.resolve(cache);
@@ -831,7 +854,7 @@ angular.module('starter.services', [])
         WechatAccount.sha1Sign = function (config, ticket) {
             var s = 'jsapi_ticket=' + ticket + '&noncestr=' + config.nonceStr + '&timestamp=' + config.timestamp + '&url=' + AppUrlHelper.getCurrentUrlWithoutHash();
 
-            config.signature = self.sha1(s);
+            config.signature = WechatAccount.sha1(s);
 
             return config.signature;
         };
@@ -847,9 +870,9 @@ angular.module('starter.services', [])
             WechatAccount.getJsApiTicket().then(function (ticket) {
                 var config = {
                     debug: false,
-                    appId: appId,
-                    timestamp: Math.floor(new Date(time).getTime() / 1000),
-                    nonceStr: WechatAccount.guid().replace('-', ''),
+                    appId: officialAccountAppId,
+                    timestamp: Math.floor(new Date().getTime() / 1000),
+                    nonceStr: Guid.guid().replace('-', ''),
                     jsApiList: [
                         'checkJsApi',
                         'onMenuShareTimeline',
@@ -891,7 +914,15 @@ angular.module('starter.services', [])
 
                 WechatAccount.sha1Sign(config, ticket);
 
-                wx.config(config);
+                wx.config(config, function (res) {
+                    UI.toast('config success');
+                    UI.toast(res);
+                    alert('success');
+                }, function (error) {
+                    UI.toast('config error');
+                    UI.toast(error);
+                    alert('error');
+                });
 
                 AppEvents.triggerLoading();
 
