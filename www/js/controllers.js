@@ -84,6 +84,10 @@ angular.module('starter.controllers', [])
                 });
             }
         };
+
+        ionic.Platform.ready(function () {
+            $('.weibo-area').load('weibo.html');
+        });
     }])
 
     .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', function ($scope, Chats, AppEvents) {
