@@ -1,0 +1,30 @@
+.absolute-middle {
+    position: absolute;
+    top: 50%;
+    margin-top: -25%;
+    left: 0;
+}
+
+.xx-large-size {
+    font-size: xx-large;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.gray-color {
+    color: #ddd;
+}
+
+.full-wide {
+    width: 100% !important;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.images img {
+    max-width: 100%;
+}
