@@ -1,6 +1,8 @@
 angular.module('starter.controllers', [])
 
     .controller('AppCtrl', ['$scope', 'Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function ($scope, Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
+        //window.location.href = '120.26.216.41/jiy';
+
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
                 eval(Recover.get());
