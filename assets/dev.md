@@ -14,7 +14,7 @@ iOS developer center: https://developer.apple.com/membercenter/index.action 注�
 #微信公众平台: 
 - https://mp.weixin.qq.com 
 - 账号: jeff.tian@outlook.com 
-- 密码: Love1050709
+- 密码: 1050709
 
 QQ 开放平台：http://connect.qq.com/manage/index QQ号：3067481304 密码：meiyanruhua
 

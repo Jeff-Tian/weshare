@@ -776,7 +776,6 @@ angular.module('starter.services', [])
 
             var cachedAccessToken = WechatAccount.getCachedAccessToken();
 
-            cachedAccessToken = null;
             if (cachedAccessToken) {
                 deferred.resolve(cachedAccessToken);
             } else {
@@ -807,7 +806,6 @@ angular.module('starter.services', [])
             var deferred = $q.defer();
 
             var cache = WechatAccount.getCachedJsApiTicket();
-            cache = null;
 
             if (cache) {
                 deferred.resolve(cache);
@@ -915,15 +913,7 @@ angular.module('starter.services', [])
 
                 WechatAccount.sha1Sign(config, ticket);
 
-                wx.config(config, function (res) {
-                    UI.toast('config success');
-                    UI.toast(res);
-                    alert('success');
-                }, function (error) {
-                    UI.toast('config error');
-                    UI.toast(error);
-                    alert('error');
-                });
+                wx.config(config);
 
                 AppEvents.triggerLoading();
 
