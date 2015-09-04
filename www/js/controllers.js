@@ -10,7 +10,7 @@ angular.module('starter.controllers', [])
 
         $scope.showDebugView = false;
         $scope.toggleDebugView = function ($event) {
-            if (true) {
+            if (window.location.search.indexOf('debug') >= 0) {
                 $scope.showDebugView = !$scope.showDebugView;
                 $('#debug-view').toggle();
             }

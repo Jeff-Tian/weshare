@@ -679,6 +679,7 @@ angular.module('starter.services', [])
                     WechatAccount.execute(function () {
                         alert('hello');
                         wx.scanQRCode();
+                        alert('after scan');
 
                         //wx.onMenuShareTimeline({
                         //    title: text,
@@ -1128,17 +1129,14 @@ angular.module('starter.services', [])
                     var queries = getUrlParams(hash.substr(index + 1));
 
                     if (queries.code && hash.indexOf('&code') >= 0) {
-                        alert('code = ' + queries.code);
                         successCallback(queries.code);
                     }
                     else {
-                        alert('code = null');
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
                 }
                 else {
-                    alert('will authorize');
                     noCodePresentCallback();
                 }
             },
