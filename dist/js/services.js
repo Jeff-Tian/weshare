@@ -475,9 +475,9 @@ angular.module('starter.services', [])
         var nativeAppId = 'wxc1ad5744c8f95cec';
         var nativeAppSecret = '838c73a021f875a96c2d718aab978665';
 
-        var officialAccountAppId = 'wx7bb4e0702e9f7956';
-        var officialAccountKey = '7c646671f505c200ff158a6f2b27cdde';
-        var officialAccountAppSecret = 'd1e7a2e95dfdeb92ac67136b3fac4f23';
+        var officialAccountAppId = 'wx252ae943a24222ae';
+        var officialAccountKey = '';
+        var officialAccountAppSecret = '57b04361b34a6c9d92a1559bd0759465';
 
         var WechatAccount = Social.create(Social.wechat);
 
@@ -776,7 +776,6 @@ angular.module('starter.services', [])
 
             var cachedAccessToken = WechatAccount.getCachedAccessToken();
 
-            cachedAccessToken = null;
             if (cachedAccessToken) {
                 deferred.resolve(cachedAccessToken);
             } else {
@@ -807,7 +806,6 @@ angular.module('starter.services', [])
             var deferred = $q.defer();
 
             var cache = WechatAccount.getCachedJsApiTicket();
-            cache = null;
 
             if (cache) {
                 deferred.resolve(cache);
@@ -915,15 +913,7 @@ angular.module('starter.services', [])
 
                 WechatAccount.sha1Sign(config, ticket);
 
-                wx.config(config, function (res) {
-                    UI.toast('config success');
-                    UI.toast(res);
-                    alert('success');
-                }, function (error) {
-                    UI.toast('config error');
-                    UI.toast(error);
-                    alert('error');
-                });
+                wx.config(config);
 
                 AppEvents.triggerLoading();
 
