@@ -311,7 +311,7 @@ angular.module('starter.services', [])
 
     .service('Proxy', ['DeviceHelper', function (DeviceHelper) {
         this.proxyNative = function (url) {
-            return '{0}?url={1}'.format('http://meiyanruhua.tao3w.com/proxy.php', encodeURIComponent(url)) + '&mode=native&send_cookies=true';
+            return '{0}?url={1}'.format('https://proxy-php.herokuapp.com/proxy2.php', encodeURIComponent(url)) + '&mode=native&send_cookies=true';
         };
 
         var self = this;
@@ -1128,14 +1128,17 @@ angular.module('starter.services', [])
                     var queries = getUrlParams(hash.substr(index + 1));
 
                     if (queries.code && hash.indexOf('&code') >= 0) {
+                        alert('code = ' + queries.code);
                         successCallback(queries.code);
                     }
                     else {
+                        alert('code = null');
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
                 }
                 else {
+                    alert('will authorize');
                     noCodePresentCallback();
                 }
             },
