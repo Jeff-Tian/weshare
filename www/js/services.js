@@ -647,6 +647,7 @@ angular.module('starter.services', [])
                 var self = this;
 
                 WechatApp.auth(scope, function (response) {
+                    alert(JSON.stringify(response));
                     if (response && response.code) {
                         self.getAccessTokenAndUidVia('https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&grant_type=authorization_code&redirect_uri={2}&code={3}'.format(nativeAppId, nativeAppSecret, nativeRedirectUri, response.code))
                             .then(function (data) {
@@ -675,32 +676,27 @@ angular.module('starter.services', [])
             publish: function (text, pictures) {
                 var dfd = $q.defer();
 
-                if (DeviceHelper.isWechatBrowser() || true) {
+                if (DeviceHelper.isWechatBrowser()) {
                     WechatAccount.execute(function () {
-                        alert('hello');
-                        wx.scanQRCode();
-                        alert('after scan');
-
-                        //wx.onMenuShareTimeline({
-                        //    title: text,
-                        //    link: 'http://zizhujy.com',
-                        //    imgUrl: 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
-                        //    success: function () {
-                        //        alert('success');
-                        //        UI.toast('分享成功');
-                        //        // Callback function executed after a user confirms sharing
-                        //    },
-                        //    cancel: function (reason) {
-                        //        alert('失败' + reason);
-                        //        UI.toast('分享失败 ' + reason);
-                        //        // Callback function executed after a user cancels sharing
-                        //    }
-                        //});
-
+                        wx.onMenuShareTimeline({
+                            title: text,
+                            link: 'http://zizhujy.com',
+                            imgUrl: 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
+                            success: function () {
+                                alert('success');
+                                UI.toast('分享成功');
+                                // Callback function executed after a user confirms sharing
+                            },
+                            cancel: function (reason) {
+                                alert('失败' + reason);
+                                UI.toast('分享失败 ' + reason);
+                                // Callback function executed after a user cancels sharing
+                            }
+                        });
                     });
                 } else {
                     WechatApp.share({
-                        text: "This is just a plain string",
+                        text: text,
                         message: {
                             title: text,
                             description: text,

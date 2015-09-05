@@ -152,3 +152,42 @@ gulp.task('deploy-build-production', function (done) {
 gulp.task('deploy-production', function (done) {
     runSequence('build', 'deploy-build-production', done);
 });
+
+var fs = require('fs');
+function getAppVersion() {
+    var configXML = fs.readFileSync('./config.xml').toString();
+    var flag = '<widget id="com.ionicframework.workspace440082" version="';
+    var index = configXML.indexOf(flag);
+    if (index >= 0) {
+        var index2 = configXML.indexOf('"', index + flag.length);
+        var version = configXML.substring(index + flag.length, index2);
+
+        return version;
+    } else {
+        return 'Version not found.';
+    }
+}
+
+gulp.task('version', function (done) {
+    console.log(getAppVersion());
+    done();
+});
+
+gulp.task('android-release', function (done) {
+    var fileName = 'jiy-' + getAppVersion() + '.apk';
+    sh.rm(fileName);
+
+    sh.exec('ionic build --release android', function () {
+        var apkPath = '/Users/tianjie/jiy/platforms/android/build/outputs/apk/android-release-unsigned.apk';
+
+        var signCommand = 'jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore -storepass 1050709 ' + apkPath + ' ' + 'alias_name';
+
+        sh.echo('ready to sign: ');
+        sh.echo(signCommand);
+        sh.exec(signCommand, function () {
+            sh.exec('zipalign -v 4 ' + apkPath + ' ' + fileName, function () {
+                done();
+            });
+        });
+    });
+});

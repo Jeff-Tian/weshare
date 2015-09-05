@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "bower": "^1.3.3",
+    "fs": "0.0.2",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.6.0",
     "gulp-if": "^1.2.5",
@@ -41,6 +42,7 @@
     "com.ionic.keyboard",
     "org.apache.cordova.inappbrowser",
     "cordova-plugin-inappbrowser",
+    "org.apache.cordova.dialogs",
     {
       "locator": "https://github.com/xu-li/cordova-plugin-wechat",
       "id": "xu.li.cordova.wechat",
@@ -50,6 +52,7 @@
     }
   ],
   "cordovaPlatforms": [
-    "ios"
+    "ios",
+    "android"
   ]
 }
