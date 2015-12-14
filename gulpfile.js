@@ -191,3 +191,7 @@ gulp.task('android-release', function (done) {
         });
     });
 });
+
+gulp.task('start', function (done) {
+    sh.exec('node index.js', done);
+});

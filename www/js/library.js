@@ -132,7 +132,7 @@
 
     function urlParams(obj) {
         if (!angular.isObject(obj)) {
-            return ( ( obj == null ) ? "" : obj.toString() );
+            return ( ( obj === null ) ? "" : obj.toString() );
         }
         var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
 

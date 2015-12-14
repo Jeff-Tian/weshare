@@ -296,7 +296,7 @@ angular.module('starter.services', [])
             get: function (deleteAfterGet) {
                 var recoverState = recoverStore.get();
 
-                if (!(deleteAfterGet === false)) {
+                if (deleteAfterGet === true) {
                     recoverStore.set(null);
                 }
 
@@ -304,7 +304,7 @@ angular.module('starter.services', [])
             },
 
             recover: function () {
-                eval(this.get());
+                eval(this.get()); // jshint ignore:line
             }
         };
     }])
@@ -422,7 +422,7 @@ angular.module('starter.services', [])
                     }
                 });
             }
-        }
+        };
     }])
 
     .service('WechatApp', ['UI', function (UI) {
@@ -718,7 +718,7 @@ angular.module('starter.services', [])
                         if (reason === '用户点击取消并返回') {
                             var m = '分享取消';
                             UI.toast(m);
-                            dfd.reject(m)
+                            dfd.reject(m);
                         } else {
                             UI.toast(reason);
                             dfd.reject(reason);

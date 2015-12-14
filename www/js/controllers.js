@@ -4,7 +4,7 @@ angular.module('starter.controllers', [])
 
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
-                eval(Recover.get());
+                eval(Recover.get());    // jshint ignore: line
             }
         });
 
@@ -87,7 +87,7 @@ angular.module('starter.controllers', [])
         };
 
         ionic.Platform.ready(function () {
-            $('.weibo-area').load('weibo.html');
+            //$('.weibo-area').load('weibo.html');
         });
     }])
 
@@ -130,12 +130,12 @@ angular.module('starter.controllers', [])
                     }
 
                     if (socialMedia === 'wechat') {
-                        return '微信'
+                        return '微信';
                     }
                 }
 
                 if (socialMedia === 'qq') {
-                    if (response.data.ret != 0) {
+                    if (response.data.ret !== 0) {
                         publishFail(response.data);
 
                         return;
@@ -156,7 +156,7 @@ angular.module('starter.controllers', [])
                     } else if (reason.error_code == 21332 || reason.data.error_code == 21332) {
                         Weibo.bind().then(function () {
                             Weibo.publish(chat.text).then(publishSuccess, publishFail);
-                        })
+                        });
                     } else {
                         UI.toast(reason, 'long');
                     }
