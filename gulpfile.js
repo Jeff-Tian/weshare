@@ -11,7 +11,7 @@ var paths = {
     sass: ['./scss/**/*.scss']
 };
 
-gulp.task('default', ['jshint', 'test']);
+gulp.task('default', ['jshint', 'test', 'start']);
 
 gulp.task('sass', function (done) {
     gulp.src('./scss/ionic.app.scss')
@@ -195,3 +195,11 @@ gulp.task('android-release', function (done) {
 gulp.task('start', function (done) {
     sh.exec('node index.js', done);
 });
+
+gulp.task('mock-release', function (done) {
+    process.env.NODE_ENV = 'prd';
+
+    done();
+});
+
+gulp.task('local-release', ['mock-release', 'default']);
