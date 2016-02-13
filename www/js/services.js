@@ -214,6 +214,10 @@ angular.module('starter.services', [])
         return StorageFactoryService.create('jiy_setting');
     }])
 
+    .factory('SavedSocialAccounts', ['StorageFactoryService', function (StorageFactoryService) {
+        return StorageFactoryService.create('jiy_saved_social_accounts');
+    }])
+
     .factory('Guid', [function () {
         function guid() {
             function s4() {
@@ -1470,4 +1474,7 @@ angular.module('starter.services', [])
             };
         }
     ])
+    .value('SocialAccounts', {
+        wordpress: 'wordpress'
+    })
 ;

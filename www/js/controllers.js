@@ -24,6 +24,10 @@ angular.module('starter.controllers', [])
     .controller('DashCtrl', ['$scope', 'LocalJiy', '$state', 'UI', 'AppEvents', 'FileReaderService', function ($scope, LocalJiy, $state, UI, AppEvents, FileReaderService) {
         function initJiy() {
             $scope.jiy.text = '';
+            $scope.jiy.pictures = [{
+                index: 0,
+                picture: null
+            }]
         }
 
         $scope.jiy = {
@@ -200,7 +204,7 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount, SavedSocialAccounts, SocialAccounts) {
         function resetPushState() {
             window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
         }
@@ -306,6 +310,29 @@ angular.module('starter.controllers', [])
                 WechatAccount.unbind();
             }
         });
+
+        $scope.wordpressAccounts = SavedSocialAccounts.fetch(SocialAccounts.wordpress) || [{
+                url: '',
+                username: '',
+                password: ''
+            }];
+
+        $scope.deleteWordpressAccount = function (index, w) {
+            $scope.wordpressAccounts.splice(index, 1);
+        };
+
+        $scope.addWordpressAccounts = function () {
+            $scope.wordpressAccounts.push({
+                url: '',
+                username: '',
+                password: ''
+            });
+        };
+
+        $scope.saveWordpressAccounts = function () {
+            SavedSocialAccounts.save(SocialAccounts.wordpress, $scope.wordpressAccounts);
+            UI.toast('已保存');
+        };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
             $scope.settings.bindWeibo = true;

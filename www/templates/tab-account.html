@@ -9,5 +9,34 @@
             </ion-toggle>
             <ion-toggle ng-model="settings.bindWechat" ng-change="toggleWechatBinding()">绑定 微信 账号</ion-toggle>
         </ion-list>
+        <ion-list ng-repeat-start="w in wordpressAccounts">
+            <ion-item class="item item-divider">
+
+                <h2>
+                    Wordpress 账号:
+                    <button class="button button-assertive" ng-click="deleteWordpressAccount($index, w)">删除</button>
+                </h2>
+            </ion-item>
+        </ion-list>
+        <ion-list class="list" ng-repeat-end>
+            <ion-item class="item item-input">
+                <span class="input-label">Url</span>
+                <input type="text" ng-model="w.url" placeholder="URL">
+            </ion-item>
+            <ion-item class="item item-input">
+                <span class="input-label">用户名</span>
+                <input type="text" ng-model="w.username" placeholder="用户名">
+            </ion-item>
+            <ion-item class="item item-input">
+                <span class="input-label">密码</span>
+                <input type="password" ng-model="w.password" placeholder="密码">
+            </ion-item>
+        </ion-list>
+        <button class="button button-block button-positive" ng-click="addWordpressAccounts()">
+            添加
+        </button>
+        <button class="button button-block button-positiev" ng-click="saveWordpressAccounts()">
+            保存
+        </button>
     </ion-content>
 </ion-view>
