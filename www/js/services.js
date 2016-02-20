@@ -191,7 +191,11 @@ angular.module('starter.services', [])
 
                 save: function (key, value) {
                     var me = this.fetch();
-                    me[key] = angular.extend({}, me[key], value);
+                    if (!(value instanceof Array)) {
+                        me[key] = angular.extend({}, me[key], value);
+                    } else {
+                        me[key] = value;
+                    }
 
                     this.set(me);
                 },

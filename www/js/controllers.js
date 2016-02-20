@@ -311,7 +311,7 @@ angular.module('starter.controllers', [])
             }
         });
 
-        $scope.wordpressAccounts = SavedSocialAccounts.fetch(SocialAccounts.wordpress) || [{
+        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [{
                 url: '',
                 username: '',
                 password: ''
@@ -320,6 +320,8 @@ angular.module('starter.controllers', [])
         $scope.deleteWordpressAccount = function (index, w) {
             $scope.wordpressAccounts.splice(index, 1);
         };
+
+        window.test = $scope.wordpressAccounts;
 
         $scope.addWordpressAccounts = function () {
             $scope.wordpressAccounts.push({
