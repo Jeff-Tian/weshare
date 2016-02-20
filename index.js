@@ -1,5 +1,6 @@
 var express = require('express');
 var app = express();
+var bodyParser = require('body-parser');
 
 function getMode() {
     return process.env.NODE_ENV || 'dev';
@@ -11,7 +12,12 @@ function getStaticFolder() {
 
 app.set('port', (process.env.PORT || 5000));
 
-app.use(express.static(getStaticFolder()));
+app.use(express.static(getStaticFolder()))
+    .use(bodyParser.json())
+    .use(bodyParser.urlencoded({
+        extended: true
+    }))
+;
 
 app.use('/service-proxy', require('./service-proxy'));
 

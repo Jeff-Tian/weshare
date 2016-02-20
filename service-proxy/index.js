@@ -10,14 +10,19 @@ module.exports = require('express').Router()
         var client = wordpress.createClient({
             url: 'http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy',
             username: 'jiy',
-            password: 'Love1050709'
+            password: 'JIYjiy@123'
         });
 
         client.newPost({
-            title: 'test',
-            content: 'test'
+            title: req.body.title,
+            content: req.body.content,
+            status: req.body.status
         }, function (err, data) {
-            res.send('done');
+            if (err) {
+                res.status(500).send(err);
+            }
+
+            res.send(data);
         });
     })
 

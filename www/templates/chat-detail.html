@@ -38,6 +38,12 @@
                 </label>
                 微信
             </li>
+            <li class="item item-checkbox" ng-repeat="w in wordpressAccounts">
+                <label class="checkbox">
+                    <input type="checkbox" ng-checked="" ng-click="publishToWordpress(w, chat)">
+                </label>
+                {{w.url}}
+            </li>
         </ul>
     </ion-content>
 </ion-view>
