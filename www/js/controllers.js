@@ -120,7 +120,7 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http) {
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService) {
         function publishSuccess(response) {
             function getName() {
                 if (socialMedia === 'weibo') {
@@ -196,7 +196,45 @@ angular.module('starter.controllers', [])
             $http.post('/service-proxy/wordpress/add-post', {
                 title: chat.text.substr(0, 10),
                 content: chat.text,
-                status: 'publish'
+                status: 'publish',
+                bits: FileReaderService.dataUriToBlob(chat.pictures[0].picture)
+            //})
+            }, {
+                transformRequest: function (data, getHeaders) {
+                    function appendFormData(formData, key, value) {
+                        if (value instanceof File) {
+                            formData.append(key, value, value.name);
+                            return;
+                        }
+
+                        if (value instanceof Blob) {
+                            formData.append(key, value, key + '.png');
+                            return;
+                        }
+
+                        if (typeof value !== 'undefined') {
+                            formData.append(key, value);
+                            return;
+                        }
+                    }
+
+                    var headers = getHeaders();
+                    // To force a header like the following:
+                    // Content-Type:multipart/form-data; boundary=----WebKitFormBoundaryKqqmv0GHZUiUdzIx
+                    headers['Content-Type'] = undefined;
+                    var formData = new FormData();
+                    angular.forEach(data, function (value, key) {
+                        if (value instanceof Array) {
+                            for (var i = 0; i < value.length; i++) {
+                                appendFormData(formData, key + '[' + i + ']', value[i]);
+                            }
+                        } else {
+                            appendFormData(formData, key, value);
+                        }
+                    });
+
+                    return formData;
+                }
             })
                 .then(function () {
                     console.log(arguments);

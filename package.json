@@ -4,6 +4,7 @@
   "description": ": An Ionic project",
   "dependencies": {
     "body-parser": "^1.15.0",
+    "connect-busboy": "0.0.2",
     "express": "^4.13.3",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.2.0",
