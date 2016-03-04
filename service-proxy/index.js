@@ -49,6 +49,15 @@ module.exports = require('express').Router()
 
         return req.pipe(req.busboy);
     }, function (req, res, next) {
+        function uploadFile(file, callback) {
+            client.uploadFile({
+                name: file.filename,
+                type: file.mimetype,
+                bits: file.buffer
+            }, callback);
+        }
+
+        var async = require('async');
         var wordpress = require('wordpress');
         var client = wordpress.createClient({
             url: 'http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy',
@@ -56,24 +65,25 @@ module.exports = require('express').Router()
             password: 'JIYjiy@123'
         });
 
-        client.uploadFile({
-            name: req.files.bits.filename,
-            type: req.files.bits.mimetype,
-            bits: req.files.bits.buffer
-        }, function (error, file) {
-            if (error) {
-                res.status(500).send(error);
-                return;
+        async.map(req.files, uploadFile, function (err, results) {
+            if (err) {
+                return res.status(500).send(err);
             }
 
-            // {"attachment_id":"25","date_created_gmt":"2016-02-22T23:54:18.000Z","parent":0,"link":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png","title":"test.png","caption":"","description":"","metadata":"","type":"image/*","thumbnail":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png","id":"25","file":"test.png","url":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png"}
+            function composeImage(file) {
+                return '' +
+                    '<div>' +
+                    '<a title="' + file.title + '" href="' + file.link + '" target="_blank">' +
+                    '<img src="' + file.thumbnail + '" alt="' + file.title + '" >' +
+                    '</a>' +
+                    '</div>';
+            }
 
-            var images =
-                '<div>' +
-                '<a title="' + file.title + '" href="' + file.link + '" target="_blank">' +
-                '<img src="' + file.thumbnail + '" alt="' + file.title + '" >' +
-                '</a>' +
-                '</div>';
+            var images = [];
+            for (var f in results) {
+                // {"attachment_id":"25","date_created_gmt":"2016-02-22T23:54:18.000Z","parent":0,"link":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png","title":"test.png","caption":"","description":"","metadata":"","type":"image/*","thumbnail":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png","id":"25","file":"test.png","url":"http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy/wp-content/uploads/2016/02/test.png"}
+                images.push(composeImage(results[f]));
+            }
 
             client.newPost({
                 title: req.body.title,
@@ -81,8 +91,7 @@ module.exports = require('express').Router()
                 status: req.body.status
             }, function (err, data) {
                 if (err) {
-                    res.status(500).send(err);
-                    return;
+                    return res.status(500).send(err);
                 }
 
                 res.send(data);

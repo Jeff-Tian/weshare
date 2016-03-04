@@ -197,8 +197,14 @@ angular.module('starter.controllers', [])
                 title: chat.text.substr(0, 10),
                 content: chat.text,
                 status: 'publish',
-                bits: FileReaderService.dataUriToBlob(chat.pictures[0].picture)
-            //})
+                pictures: chat.pictures
+                    .filter(function (p) {
+                        return p.picture;
+                    })
+                    .map(function (p) {
+                        return FileReaderService.dataUriToBlob(p.picture);
+                    })
+                //})
             }, {
                 transformRequest: function (data, getHeaders) {
                     function appendFormData(formData, key, value) {
