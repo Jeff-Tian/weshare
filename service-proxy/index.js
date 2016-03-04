@@ -60,9 +60,9 @@ module.exports = require('express').Router()
         var async = require('async');
         var wordpress = require('wordpress');
         var client = wordpress.createClient({
-            url: 'http://ec2-54-191-128-78.us-west-2.compute.amazonaws.com/jiy',
-            username: 'jiy',
-            password: 'JIYjiy@123'
+            url: req.body.wordpressUrl,
+            username: req.body.wordpressUsername,
+            password: req.body.wordpressPassword
         });
 
         async.map(req.files, uploadFile, function (err, results) {
@@ -89,12 +89,18 @@ module.exports = require('express').Router()
                 title: req.body.title,
                 content: req.body.content + images,
                 status: req.body.status
-            }, function (err, data) {
+            }, function (err, postId) {
                 if (err) {
                     return res.status(500).send(err);
                 }
 
-                res.send(data);
+                client.getPost(postId, function (err, data) {
+                    if (err) {
+                        return res.status(500).send(err);
+                    }
+
+                    res.send(data);
+                });
             });
         });
     })

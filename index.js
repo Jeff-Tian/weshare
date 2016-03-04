@@ -18,7 +18,7 @@ app.use(express.static(getStaticFolder()))
     .use(bodyParser.urlencoded({
         extended: true
     }))
-    .use(busboy());
+    .use(busboy())
 ;
 
 app.use('/service-proxy', require('./service-proxy'));

@@ -194,6 +194,9 @@ angular.module('starter.controllers', [])
 
         $scope.publishToWordpress = function (w, chat) {
             $http.post('/service-proxy/wordpress/add-post', {
+                wordpressUrl: w.url,
+                wordpressUsername: w.username,
+                wordpressPassword: w.password,
                 title: chat.text.substr(0, 10),
                 content: chat.text,
                 status: 'publish',
@@ -242,8 +245,10 @@ angular.module('starter.controllers', [])
                     return formData;
                 }
             })
-                .then(function () {
+                .then(function (response) {
                     console.log(arguments);
+                    chat[w.url] = response.data;
+                    LocalJiy.update(chat);
                     UI.toast('成功发布到了 ' + w.url);
                 }, function (data) {
                     console.error(arguments);
