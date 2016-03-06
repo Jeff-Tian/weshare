@@ -479,9 +479,9 @@ angular.module('starter.services', [])
     }])
 
     .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid) {
-        var appId = 'wx532519f71243a768';
-        var appSecret = '528dade6fff1cd37cbe9d4771a00f009';
-        var redirectUrl = 'http://uat2.bridgeplus.cn';
+        var appId = 'wx19e1dfb500a973ab';
+        var appSecret = '5884a99c7724917a8f16e17cd681256f';
+        var redirectUrl = 'http://uat2.bridgeplus.cn/wechat/logon';
 
         var nativeRedirectUri = 'http://www.huaoo.cc';
         var nativeAppId = 'wxc1ad5744c8f95cec';

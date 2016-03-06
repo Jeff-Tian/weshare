@@ -53,7 +53,8 @@
       "variables": {
         "": ""
       }
-    }
+    },
+    "cordova-plugin-wechat"
   ],
   "cordovaPlatforms": [
     "ios",
