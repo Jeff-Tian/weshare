@@ -13,6 +13,15 @@ function getStaticFolder() {
 
 app.set('port', (process.env.PORT || 5000));
 
+app.all('*', function (req, res, next) {
+    if (req.query.code && req.query.state) {
+        // Redirected from Wechat?
+        return res.redirect(new Buffer(req.query.state, 'base64').toString());
+    }
+
+    next();
+});
+
 app.use(express.static(getStaticFolder()))
     .use(bodyParser.json())
     .use(bodyParser.urlencoded({

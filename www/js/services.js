@@ -77,6 +77,10 @@ angular.module('starter.services', [])
             return encodeURIComponent(this.extractStateUrl(this.getCurrentUrl()));
         };
 
+        this.base64EncodeCurrentState = function () {
+            return window.btoa(this.extractStateUrl(this.getCurrentUrl()));
+        };
+
         this.getCurrentUrlWithoutHash = function () {
             var url = this.getCurrentUrl();
             var indexOfHash = url.indexOf('#');
@@ -548,7 +552,7 @@ angular.module('starter.services', [])
 
             authorize: function (successCallback, errorCallback) {
                 Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
-                    .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
+                    .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.base64EncodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
                     return getUrlParams(url).code;
                 });
             },
