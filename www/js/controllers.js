@@ -4,7 +4,15 @@ angular.module('starter.controllers', [])
 
         ionic.Platform.ready(function () {
             if (DeviceHelper.isInBrowser()) {
-                eval(Recover.get());    // jshint ignore: line
+                var recover = Recover.get();
+
+                if (recover) {
+                    var ans = window.confirm('上次异常退出, 需要恢复吗?');
+
+                    if (ans) {
+                        eval(Recover.get());    // jshint ignore: line
+                    }
+                }
             }
         });
 
@@ -254,6 +262,10 @@ angular.module('starter.controllers', [])
                     console.error(arguments);
                     UI.toast(data.data || '未收到服务器数据', 'long');
                 });
+        };
+
+        $scope.hasPublishedToWordpress = function (w, chat) {
+            return chat[w.url];
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
