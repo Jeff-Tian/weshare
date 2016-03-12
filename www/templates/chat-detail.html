@@ -11,7 +11,7 @@
         <button class="button button-icon icon ion-chevron-left"></button>
     </ion-header-bar>
 
-    <ion-content>
+    <ion-content overflow-scroll="true">
         <div class="list card">
             <div class="item item-avatar">
                 <img ng-src="/img/ionic.png">
@@ -23,8 +23,6 @@
             <div class="item item-body">
                 <p>{{chat.text}}</p>
                 <img ng-src="{{p.picture}}" ng-repeat="p in getValidPictures(chat.pictures)" class="full-image">
-
-                <p>{{chat.pictures}}</p>
 
                 <p>
                     <a href="javascript: void(0);" class="subdued" ng-show="getChatType(chat) === 'text'">
