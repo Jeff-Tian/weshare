@@ -21,8 +21,7 @@
             </div>
             <div class="item item-body">
                 <p>{{chat.text}}</p>
-                <img ng-src="{{p.picture}}" ng-repeat="p in ChatCourier.getChatValidPictures(chat)"
-                     class="full-image">
+                <img ng-src="{{p.picture}}" ng-repeat="p in ChatCourier.getChatValidPictures(chat)" class="full-image">
                 <p>
                     <a href="javascript: void(0);" class="subdued" ng-show="chatType === ChatCourier.ChatType.text">
                         <i class="icon ion-android-textsms"></i>
