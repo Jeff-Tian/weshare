@@ -4,8 +4,7 @@
   The FriendsCtrl pulls data from the Friends service (service.js)
   The Friends service returns an array of friend data
 -->
-<ion-view
-        view-title="{{chat.text}}">
+<ion-view view-title="{{chat.text}}">
 
     <ion-header-bar class="bar bar-royal">
         <button class="button button-icon icon ion-chevron-left"></button>
@@ -25,29 +24,26 @@
                 <img ng-src="{{p.picture}}" ng-repeat="p in ChatCourier.getChatValidPictures(chat)"
                      class="full-image">
                 <p>
-                    <a href="javascript: void(0);" class="subdued"
-                       ng-show="chatType === ChatCourier.ChatType.text">
+                    <a href="javascript: void(0);" class="subdued" ng-show="chatType === ChatCourier.ChatType.text">
                         <i class="icon ion-android-textsms"></i>
                         纯文叽歪
                     </a>
-                    <a href="javascript: void(0);" class="subdued"
-                       ng-show="chatType === ChatCourier.ChatType.image">
+                    <a href="javascript: void(0);" class="subdued" ng-show="chatType === ChatCourier.ChatType.image">
                         <i class="icon ion-image"></i>
                         单图叽歪
                     </a>
-                    <a href="javascript: void(0);" class="subdued"
-                       ng-show="chatType === ChatCourier.ChatType.link">
+                    <a href="javascript: void(0);" class="subdued" ng-show="chatType === ChatCourier.ChatType.link">
                         <i class="icon ion-images"></i>
                         图文叽歪
                     </a>
                     <a href="javascript: void(0);" class="subdued"
-                       ng-show="chatType === ChatCourier.ChatType.shareLink">
+                        ng-show="chatType === ChatCourier.ChatType.shareLink">
                         <i class="icon ion-link"></i>
                         纯链叽歪
                     </a>
 
                     <a ng-href="{{ChatCourier.getMainWordpressLink(chat)}}" class="" target="_blank"
-                       ng-if="ChatCourier.getMainWordpressLink(chat)">
+                        ng-if="ChatCourier.getMainWordpressLink(chat)">
                         <i class="icon ion-link"></i>
                         原文链接
                     </a>
@@ -68,8 +64,8 @@
             </li>
             <li class="item item-checkbox item-icon-right" ng-repeat="w in wordpressAccounts">
                 <label class="checkbox">
-                    <input type="checkbox" ng-model="publishStatus[w.url]"
-                           ng-click="publishToWordpress(w, chat)" ng-disabled="publishStatus[w.url]">
+                    <input type="checkbox" ng-model="publishStatus[w.url]" ng-click="publishToWordpress(w, chat)"
+                        ng-disabled="publishStatus[w.url]">
                 </label>
                 {{w.url}}
 
@@ -79,21 +75,21 @@
             <li class="item item-checkbox">
                 <label class="checkbox">
                     <input type="checkbox" ng-model="publishStatus.weibo" ng-click="publish('weibo', chat)"
-                           ng-disabled="publishStatus.weibo">
+                        ng-disabled="publishStatus.weibo">
                 </label>
                 微博
             </li>
             <li class="item item-checkbox">
                 <label class="checkbox">
                     <input type="checkbox" ng-model="publishStatus.qq" ng-click="publish('qq', chat)"
-                           ng-disabled="publishStatus.qq">
+                        ng-disabled="publishStatus.qq">
                 </label>
                 QQ 空间
             </li>
             <li class="item item-checkbox">
                 <label class="checkbox">
                     <input type="checkbox" ng-model="publishStatus.wechat" ng-click="publish('wechat', chat)"
-                           ng-disabled="publishStatus.wechat">
+                        ng-disabled="publishStatus.wechat">
                 </label>
                 微信
             </li>
