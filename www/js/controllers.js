@@ -281,7 +281,12 @@ angular.module('starter.controllers', [])
             $scope.publish(Social.wechat, $scope.chat);
         });
 
-        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
+        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [{
+                url: 'http://jiy.zizhujy.com/jiy',
+                username: '',
+                password: '',
+                main: true
+            }];
         console.log($scope.wordpressAccounts);
     }])
 
@@ -392,11 +397,18 @@ angular.module('starter.controllers', [])
             }
         });
 
-        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [{
-                url: '',
-                username: '',
-                password: ''
-            }];
+        var mainWordpress = {
+            main: true,
+            url: 'http://jiy.zizhujy.com/jiy',
+            username: '',
+            password: ''
+        };
+
+        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
+
+        if ($scope.wordpressAccounts.length <= 0) {
+            $scope.wordpressAccounts = [mainWordpress];
+        }
 
         $scope.deleteWordpressAccount = function (index, w) {
             $scope.wordpressAccounts.splice(index, 1);

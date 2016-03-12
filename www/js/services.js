@@ -483,9 +483,9 @@ angular.module('starter.services', [])
         var appSecret = '5884a99c7724917a8f16e17cd681256f';
         var redirectUrl = 'http://uat2.bridgeplus.cn/wechat/logon';
 
-        var nativeRedirectUri = 'http://www.huaoo.cc';
-        var nativeAppId = 'wxc1ad5744c8f95cec';
-        var nativeAppSecret = '838c73a021f875a96c2d718aab978665';
+        var nativeRedirectUri = 'http://jiy.coding.io';
+        var nativeAppId = 'wx532519f71243a768';
+        var nativeAppSecret = '528dade6fff1cd37cbe9d4771a00f009';
 
         var officialAccountAppId = 'wx252ae943a24222ae';
         var officialAccountKey = '';

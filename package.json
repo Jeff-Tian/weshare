@@ -47,17 +47,10 @@
     "org.apache.cordova.inappbrowser",
     "cordova-plugin-inappbrowser",
     "org.apache.cordova.dialogs",
-    {
-      "locator": "https://github.com/xu-li/cordova-plugin-wechat",
-      "id": "xu.li.cordova.wechat",
-      "variables": {
-        "": ""
-      }
-    },
     "cordova-plugin-wechat"
   ],
   "cordovaPlatforms": [
-    "ios",
-    "android"
+    "android",
+    "ios"
   ]
 }
