@@ -41,6 +41,14 @@
                 </span>
                 <input type="password" ng-model="w.password" placeholder="密码">
             </ion-item>
+            <ion-item class="item item-divider">
+                <div class="button-bar">
+                    <a class="button icon-right ion-log-in">
+                        登录
+                    </a>
+                    <span class="button icon">{{w.info}}</span>
+                </div>
+            </ion-item>
         </ion-list>
 
         <button class="button button-block button-positive" ng-click="addWordpressAccounts()">

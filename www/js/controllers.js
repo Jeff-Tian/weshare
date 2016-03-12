@@ -103,7 +103,7 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', function ($scope, Chats, AppEvents) {
+    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', '$q', function ($scope, Chats, AppEvents, $q) {
         // With the new view caching in Ionic, Controllers are only called
         // when they are recreated or on app start, instead of every page change.
         // To listen for when this page is active (for example, to refresh data),
@@ -121,6 +121,7 @@ angular.module('starter.controllers', [])
         $scope.doRefresh = function () {
             Chats.refresh();
             $scope.chats = Chats.all();
+            $scope.$broadcast('scroll.refreshComplete');
         };
 
         AppEvents.handle(AppEvents.jiy.saved, function () {
@@ -130,6 +131,24 @@ angular.module('starter.controllers', [])
 
     .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService) {
         $scope.chat = Chats.get($stateParams.chatId);
+
+        $scope.getValidPictures = function (chat) {
+            if (!chat.pictures || !(chat.pictures instanceof Array)) {
+                return [];
+            }
+
+            return chat.pictures.filter(function (p) {
+                return p.picture;
+            });
+        };
+
+        $scope.getChatType = function (chat) {
+            if ($scope.getValidPictures(chat.pictures).length === 0) {
+                return 'text';
+            }
+
+            return 'link';
+        };
 
         $scope.publish = function (socialMedia, chat) {
             function publishSuccess(response) {
@@ -281,13 +300,7 @@ angular.module('starter.controllers', [])
             $scope.publish(Social.wechat, $scope.chat);
         });
 
-        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [{
-                url: 'http://jiy.zizhujy.com/jiy',
-                username: '',
-                password: '',
-                main: true
-            }];
-        console.log($scope.wordpressAccounts);
+        $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
     }])
 
     .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount, SavedSocialAccounts, SocialAccounts) {
@@ -401,7 +414,8 @@ angular.module('starter.controllers', [])
             main: true,
             url: 'http://jiy.zizhujy.com/jiy',
             username: '',
-            password: ''
+            password: '',
+            info: '未连接'
         };
 
         $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
