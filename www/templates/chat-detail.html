@@ -14,7 +14,7 @@
     <ion-content>
         <div class="list card">
             <div class="item item-avatar">
-                <img ng-src="/img/ionic.png">
+                <img ng-src="img/ionic.png">
 
                 <h2>叽歪</h2>
 
@@ -22,16 +22,19 @@
             </div>
             <div class="item item-body">
                 <p>{{chat.text}}</p>
-                <img ng-src="{{p.picture}}" ng-repeat="p in ChatCourier.getChatValidPictures(chat.pictures)"
+                <img ng-src="{{p.picture}}" ng-repeat="p in ChatCourier.getChatValidPictures(chat)"
                      class="full-image">
-
-                <p>{{chat.pictures}}</p>
 
                 <p>
                     <a href="javascript: void(0);" class="subdued"
                        ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.text">
                         <i class="icon ion-android-textsms"></i>
                         纯文叽歪
+                    </a>
+                    <a href="javascript: void(0);" class="subdued"
+                       ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.image">
+                        <i class="icon ion-image"></i>
+                        单图叽歪
                     </a>
                     <a href="javascript: void(0);" class="subdued"
                        ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.link">
@@ -71,19 +74,22 @@
 
             <li class="item item-checkbox">
                 <label class="checkbox">
-                    <input type="checkbox" ng-model="publishStatus.weibo" ng-click="publish('weibo', chat)" ng-disabled="publishStatus.weibo">
+                    <input type="checkbox" ng-model="publishStatus.weibo" ng-click="publish('weibo', chat)"
+                           ng-disabled="publishStatus.weibo">
                 </label>
                 微博
             </li>
             <li class="item item-checkbox">
                 <label class="checkbox">
-                    <input type="checkbox" ng-model="publishStatus.qq" ng-click="publish('qq', chat)" ng-disabled="publishStatus.qq">
+                    <input type="checkbox" ng-model="publishStatus.qq" ng-click="publish('qq', chat)"
+                           ng-disabled="publishStatus.qq">
                 </label>
                 QQ 空间
             </li>
             <li class="item item-checkbox">
                 <label class="checkbox">
-                    <input type="checkbox" ng-model="publishStatus.wechat" ng-click="publish('wechat', chat)" ng-disabled="publishStatus.wechat">
+                    <input type="checkbox" ng-model="publishStatus.wechat" ng-click="publish('wechat', chat)"
+                           ng-disabled="publishStatus.wechat">
                 </label>
                 微信
             </li>

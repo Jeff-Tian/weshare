@@ -166,6 +166,8 @@ angular.module('starter.controllers', [])
 
             //{"ret":-1,"msg":"client request's parameters are invalid, invalid openid"}
             function publishFail(reason) {
+                $scope.publishStatus[socialMedia] = false;
+
                 if (socialMedia === 'weibo') {
                     if (reason.error_code == 20019 || reason.data.error_code == 20019) {
                         UI.toast('发布重复内容到微博失败 ' + reason.error);

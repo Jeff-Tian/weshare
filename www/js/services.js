@@ -457,6 +457,7 @@ angular.module('starter.services', [])
         var c = {
             ChatType: {
                 text: 'text',
+                image: 'image',
                 link: 'link'
             },
 
@@ -479,8 +480,14 @@ angular.module('starter.services', [])
             },
 
             getChatType: function (chat) {
-                if (c.getChatValidPictures(chat.pictures).length === 0) {
+                var validPictures = c.getChatValidPictures(chat).length;
+
+                if (validPictures === 0) {
                     return c.ChatType.text;
+                } else {
+                    if (!chat.text && validPictures === 1) {
+                        return c.ChatType.image;
+                    }
                 }
 
                 return c.ChatType.link;
@@ -731,13 +738,52 @@ angular.module('starter.services', [])
             publishChat: function (chat) {
                 var dfd = $q.defer();
 
+                var mainWordpressLink = ChatCourier.getMainWordpressLink(chat);
+                var text = chat.text;
+
+                if (mainWordpressLink) {
+                    text += '\r\n' + mainWordpressLink;
+                }
+
+                var validPictures = ChatCourier.getChatValidPictures(chat);
+
                 if (ChatCourier.getChatType(chat) === ChatCourier.ChatType.text) {
                     WechatApp.share({
-                        text: chat.text,
+                        text: text,
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                } else if (ChatCourier.getChatType(chat) === ChatCourier.ChatType.image) {
+                    WechatApp.share({
+                        message: {
+                            title: text,
+                            description: text,
+                            thumb: 'www/img/ionic.png',
+                            mediaTagName: '叽-歪',
+                            messageExt: '有事叽歪, 没事叽歪',
+                            messageAction: '<action>jiy</action>',
+                            media: {
+                                type: WechatApp.Type.IMAGE,
+                                image: validPictures[0].picture
+                            }
+                        },
                         scene: WechatApp.Scene.TIMELINE
                     }, sharedSuccess(dfd), sharingFailed(dfd));
                 } else {
-
+                    WechatApp.share({
+                        message: {
+                            title: text,
+                            description: text,
+                            thumb: 'www/img/ionic.png',
+                            mediaTagName: '叽-歪',
+                            messageExt: '有事叽歪, 没事叽歪',
+                            messageAction: '<action>jiy</action>',
+                            media: {
+                                type: WechatApp.Type.LINK,
+                                webpageUrl: mainWordpressLink
+                            }
+                        },
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
                 }
 
                 return dfd.promise;
