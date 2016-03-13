@@ -453,7 +453,53 @@ angular.module('starter.services', [])
         return wechatApp;
     }])
 
-    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid) {
+    .factory('ChatCourier', [function () {
+        var c = {
+            ChatType: {
+                text: 'text',
+                link: 'link'
+            },
+
+            mainWordpress: {
+                main: true,
+                url: 'http://jiy.zizhujy.com/jiy',
+                username: '',
+                password: '',
+                info: '未连接'
+            },
+
+            getChatValidPictures: function (chat) {
+                if (!chat.pictures || !(chat.pictures instanceof Array)) {
+                    return [];
+                }
+
+                return chat.pictures.filter(function (p) {
+                    return p.picture;
+                });
+            },
+
+            getChatType: function (chat) {
+                if (c.getChatValidPictures(chat.pictures).length === 0) {
+                    return c.ChatType.text;
+                }
+
+                return c.ChatType.link;
+            },
+
+            getMainWordpressLink: function (chat) {
+                if (!chat[c.mainWordpress.url]) {
+                    return '';
+                }
+
+                return chat[c.mainWordpress.url].link;
+            }
+        };
+
+        return c;
+    }])
+
+    .
+    factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', 'ChatCourier', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid, ChatCourier) {
         var appId = 'wx19e1dfb500a973ab';
         var appSecret = '5884a99c7724917a8f16e17cd681256f';
         var redirectUrl = 'http://uat2.bridgeplus.cn/wechat/logon';
@@ -467,6 +513,28 @@ angular.module('starter.services', [])
         var officialAccountAppSecret = '57b04361b34a6c9d92a1559bd0759465';
 
         var WechatAccount = Social.create(Social.wechat);
+
+        function sharedSuccess(dfd) {
+            return function () {
+                var m = '已分享到朋友圈';
+                UI.toast(m);
+
+                dfd.resolve(m);
+            };
+        }
+
+        function sharingFailed(dfd) {
+            return function (reason) {
+                if (reason === '用户点击取消并返回') {
+                    var m = '分享取消';
+                    UI.toast(m);
+                    dfd.reject(m);
+                } else {
+                    UI.toast(reason);
+                    dfd.reject(reason);
+                }
+            };
+        }
 
         WechatAccount = angular.extend({}, WechatAccount, {
             tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
@@ -660,6 +728,21 @@ angular.module('starter.services', [])
                 return deferred.promise;
             },
 
+            publishChat: function (chat) {
+                var dfd = $q.defer();
+
+                if (ChatCourier.getChatType(chat) === ChatCourier.ChatType.text) {
+                    WechatApp.share({
+                        text: chat.text,
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                } else {
+
+                }
+
+                return dfd.promise;
+            },
+
             publish: function (text, pictures) {
                 var dfd = $q.defer();
 
@@ -697,20 +780,7 @@ angular.module('starter.services', [])
                             }
                         },
                         scene: WechatApp.Scene.TIMELINE   // share to Timeline
-                    }, function () {
-                        var m = '已分享到朋友圈';
-                        UI.toast(m);
-                        dfd.resolve(m);
-                    }, function (reason) {
-                        if (reason === '用户点击取消并返回') {
-                            var m = '分享取消';
-                            UI.toast(m);
-                            dfd.reject(m);
-                        } else {
-                            UI.toast(reason);
-                            dfd.reject(reason);
-                        }
-                    });
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
                 }
 
                 return dfd.promise;
