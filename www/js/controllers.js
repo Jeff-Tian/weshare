@@ -34,7 +34,7 @@ angular.module('starter.controllers', ['jiyConfig'])
             $scope.jiy.pictures = [{
                 index: 0,
                 picture: null
-            }]
+            }];
         }
 
         $scope.jiy = {

@@ -293,7 +293,7 @@ angular.module('starter.services', [])
             get: function (deleteAfterGet) {
                 var recoverState = recoverStore.get();
 
-                if (!(deleteAfterGet === false)) {
+                if (deleteAfterGet !== false) {
                     recoverStore.set(null);
                 }
 

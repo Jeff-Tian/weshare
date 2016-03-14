@@ -41,7 +41,7 @@ var ret = {
     prepend: prependNode
 };
 
-if (module && module.exports) {
+if (typeof module !== 'undefined' && module.exports) {
     module.exports = ret;
 } else if (angular) {
     angular.module('ng.utils', [])

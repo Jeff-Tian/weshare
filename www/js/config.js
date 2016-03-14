@@ -8,7 +8,7 @@ var config = {
     }
 };
 
-if (module && module.exports) {
+if (typeof module !== 'undefined' && module.exports) {
     modules.exports = config;
 } else if (angular) {
     angular.module('jiyConfig', ['ng.utils'])
