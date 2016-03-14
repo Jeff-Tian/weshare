@@ -1,3 +1,5 @@
+var config = require('../www/js/config.js');
+
 module.exports = require('express').Router()
     .use(function (req, res, next) {
         next();
@@ -6,7 +8,7 @@ module.exports = require('express').Router()
         res.send('pong');
     })
 
-    .post('/wordpress/add-post', function (req, res, next) {
+    .post(config.serviceUrls.wordpress.addPost, function (req, res, next) {
         req.files = {};
 
         req.busboy.on('file', function (fieldName, file, fileName, encoding, mimeType) {

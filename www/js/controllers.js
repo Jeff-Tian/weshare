@@ -1,5 +1,4 @@
-angular.module('starter.controllers', [])
-
+angular.module('starter.controllers', ['jiyConfig'])
     .controller('AppCtrl', ['$scope', 'Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function ($scope, Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
 
         ionic.Platform.ready(function () {
@@ -109,9 +108,9 @@ angular.module('starter.controllers', [])
         // To listen for when this page is active (for example, to refresh data),
         // listen for the $ionicView.enter event:
         //
-        //$scope.$on('$ionicView.enter', function (e) {
-        //    $scope.doRefresh();
-        //});
+        $scope.$on('$ionicView.enter', function (e) {
+            $scope.doRefresh();
+        });
 
         $scope.chats = Chats.all();
         $scope.remove = function (chat) {
@@ -206,7 +205,7 @@ angular.module('starter.controllers', [])
         };
 
         $scope.publishToWordpress = function (w, chat) {
-            $http.post('/service-proxy/wordpress/add-post', {
+            $http.post(config.serviceUrls.wordpress.addPost, {
                 wordpressUrl: w.url,
                 wordpressUsername: w.username,
                 wordpressPassword: w.password,

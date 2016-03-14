@@ -7,7 +7,7 @@
 // 'starter.controllers' is found in controllers.js
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
 
-    .run(['$ionicPlatform', function ($ionicPlatform) {
+    .run(['$ionicPlatform', '$rootScope', 'ChatCourier', function ($ionicPlatform, $rootScope, ChatCourier) {
         $ionicPlatform.ready(function () {
             // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
             // for form inputs)
@@ -21,6 +21,8 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
                 StatusBar.styleLightContent();
             }
         });
+
+        $rootScope.ChatCourier = ChatCourier;
     }])
 
     .config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {

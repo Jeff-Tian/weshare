@@ -240,7 +240,17 @@ angular.module('starter.services', [])
 
         jiyList.remove = function (jiy) {
             var list = jiyList.fetchAsArray();
-            list.splice(list.indexOf(jiy), 1);
+
+            var index = list.indexOf(jiy);
+            if (index >= 0) {
+                list.splice(list.indexOf(jiy), 1);
+            } else {
+                for (var i = list.length - 1; i >= 0; i--) {
+                    if (list[i].guid === jiy.guid) {
+                        list.splice(i, 1);
+                    }
+                }
+            }
 
             jiyList.set(list);
         };

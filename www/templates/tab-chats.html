@@ -7,7 +7,7 @@
         <ion-list>
             <ion-item class="item-remove-animate item-avatar item-icon-right" ng-repeat="chat in chats"
                       type="item-text-wrap" href="#/tab/chats/{{chat.guid || $index}}">
-                <img ng-src="{{chat.face}}">
+                <img ng-src="{{ChatCourier.getChatValidPictures(chat)[0].picture || 'img/ionic.png'}}">
 
                 <h2>{{chat.createdTime | date: 'yyyy-MM-dd hh:mm:ss'}}</h2>
 
