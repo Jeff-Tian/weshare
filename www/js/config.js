@@ -1,6 +1,6 @@
 var config = {
     host: 'https://jiy.zizhujy.com',
-    port: ':666',
+    port: ':60001',
     serviceUrls: {
         wordpress: {
             addPost: '/wordpress/add-post'
@@ -9,7 +9,7 @@ var config = {
 };
 
 if (typeof module !== 'undefined' && module.exports) {
-    modules.exports = config;
+    module.exports = config;
 } else if (angular) {
     angular.module('jiyConfig', ['ng.utils'])
         .run(['$rootScope', 'leavesTrimmer', function ($rootScope, leavesTrimmer) {

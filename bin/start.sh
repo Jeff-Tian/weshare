@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PORT="666"
+PORT="60001"
 APP_NAME="jiyapp"
 #NODE_ENV="prd"
 

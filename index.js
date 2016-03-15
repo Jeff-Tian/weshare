@@ -11,7 +11,9 @@ function getStaticFolder() {
     return __dirname + (getMode() === 'dev' ? '/www' : '/dist');
 }
 
-app.set('port', (process.env.PORT || 5000));
+var config = require('./www/js/config.js');
+
+app.set('port', (process.env.PORT || config.port.replace(':', '')));
 
 app.all('*', function (req, res, next) {
     if (req.query.code && req.query.state) {
