@@ -27,19 +27,24 @@
 
                 <p>
                     <a href="javascript: void(0);" class="subdued"
-                       ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.text">
+                       ng-show="chatType === ChatCourier.ChatType.text">
                         <i class="icon ion-android-textsms"></i>
                         纯文叽歪
                     </a>
                     <a href="javascript: void(0);" class="subdued"
-                       ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.image">
+                       ng-show="chatType === ChatCourier.ChatType.image">
                         <i class="icon ion-image"></i>
                         单图叽歪
                     </a>
                     <a href="javascript: void(0);" class="subdued"
-                       ng-show="ChatCourier.getChatType(chat) === ChatCourier.ChatType.link">
+                       ng-show="chatType === ChatCourier.ChatType.link">
                         <i class="icon ion-images"></i>
                         图文叽歪
+                    </a>
+                    <a href="javascript: void(0);" class="subdued"
+                       ng-show="chatType === ChatCourier.ChatType.shareLink">
+                        <i class="icon ion-link"></i>
+                        纯链叽歪
                     </a>
 
                     <a ng-href="{{ChatCourier.getMainWordpressLink(chat)}}" class="" target="_blank"

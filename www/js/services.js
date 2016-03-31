@@ -468,7 +468,8 @@ angular.module('starter.services', [])
             ChatType: {
                 text: 'text',
                 image: 'image',
-                link: 'link'
+                link: 'link',
+                shareLink: 'shareLink'
             },
 
             mainWordpress: {
@@ -492,8 +493,14 @@ angular.module('starter.services', [])
             getChatType: function (chat) {
                 var validPictures = c.getChatValidPictures(chat).length;
 
+                var urlPattern = /^(?:http[s]?):\/\/.+$/gi;
+
                 if (validPictures === 0) {
-                    return c.ChatType.text;
+                    if (!urlPattern.test(chat.text)) {
+                        return c.ChatType.text;
+                    } else {
+                        return c.ChatType.shareLink;
+                    }
                 } else {
                     if (!chat.text && validPictures === 1) {
                         return c.ChatType.image;

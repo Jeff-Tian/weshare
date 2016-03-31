@@ -133,6 +133,8 @@ angular.module('starter.controllers', ['jiyConfig'])
 
         $scope.ChatCourier = ChatCourier;
 
+        $scope.chatType = ChatCourier.getChatType($scope.chat);
+
         $scope.publish = function (socialMedia, chat) {
             function publishSuccess(response) {
                 function getName() {
