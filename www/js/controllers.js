@@ -424,13 +424,19 @@ angular.module('starter.controllers', ['jiyConfig'])
             $scope.wordpressAccounts.push({
                 url: '',
                 username: '',
-                password: ''
+                password: '',
+                info: '未连接'
             });
         };
 
         $scope.saveWordpressAccounts = function () {
             SavedSocialAccounts.save(SocialAccounts.wordpress, $scope.wordpressAccounts);
             UI.toast('已保存');
+        };
+
+        $scope.resetWordpressAccounts = function () {
+            $scope.wordpressAccounts = [mainWordpress];
+            UI.toast('已恢复');
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
