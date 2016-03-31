@@ -763,13 +763,14 @@ angular.module('starter.services', [])
                 }
 
                 var validPictures = ChatCourier.getChatValidPictures(chat);
+                var chatType = ChatCourier.getChatType(chat);
 
-                if (ChatCourier.getChatType(chat) === ChatCourier.ChatType.text) {
+                if (chatType === ChatCourier.ChatType.text) {
                     WechatApp.share({
                         text: text,
                         scene: WechatApp.Scene.TIMELINE
                     }, sharedSuccess(dfd), sharingFailed(dfd));
-                } else if (ChatCourier.getChatType(chat) === ChatCourier.ChatType.image) {
+                } else if (chatType === ChatCourier.ChatType.image) {
                     WechatApp.share({
                         message: {
                             title: text,
@@ -781,6 +782,22 @@ angular.module('starter.services', [])
                             media: {
                                 type: WechatApp.Type.IMAGE,
                                 image: validPictures[0].picture
+                            }
+                        },
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                } else if (chatType === ChatCourier.ChatType.shareLink) {
+                    WechatApp.share({
+                        message: {
+                            title: '叽歪 - 有事叽歪, 没事叽歪',
+                            description: '叽歪 - 有事叽歪, 没事叽歪',
+                            thumb: 'www/img/Logo108x108.png',
+                            mediaTagName: '叽-歪',
+                            messageExt: '有事叽歪, 没事叽歪',
+                            messageAction: '<action>jiy</action>',
+                            media: {
+                                type: WechatApp.Type.LINK,
+                                webpageUrl: chat.text
                             }
                         },
                         scene: WechatApp.Scene.TIMELINE
