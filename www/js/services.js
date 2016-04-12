@@ -798,21 +798,36 @@ angular.module('starter.services', [])
                         scene: WechatApp.Scene.TIMELINE
                     }, sharedSuccess(dfd), sharingFailed(dfd));
                 } else if (chatType === ChatCourier.ChatType.shareLink) {
-                    WechatApp.share({
-                        message: {
-                            title: '叽歪 - 有事叽歪, 没事叽歪',
-                            description: '叽歪 - 有事叽歪, 没事叽歪',
-                            thumb: 'www/img/Logo108x108.png',
-                            mediaTagName: '叽-歪',
-                            messageExt: '有事叽歪, 没事叽歪',
-                            messageAction: '<action>jiy</action>',
-                            media: {
-                                type: WechatApp.Type.LINK,
-                                webpageUrl: chat.text
-                            }
-                        },
-                        scene: WechatApp.Scene.TIMELINE
-                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                    var title = '叽歪 - 有事叽歪, 没事叽歪';
+                    var desc = '叽歪 - 有事叽歪, 没事叽歪';
+                    var thumb = 'www/img/Logo108x108.png';
+
+                    $http.get(chat.text)
+                        .success(function (response) {
+                            var $html = $(response);
+                            title = $html.find('.rich_media_title').text() || title;
+                            desc = title;
+                            // thumb = $html.find('img.rich_media_thumb').src || thumb;
+                        })
+                        .finally(function () {
+
+                            WechatApp.share({
+                                message: {
+                                    title: title,
+                                    description: desc,
+                                    thumb: thumb,
+                                    mediaTagName: '叽-歪',
+                                    messageExt: '有事叽歪, 没事叽歪',
+                                    messageAction: '<action>jiy</action>',
+                                    media: {
+                                        type: WechatApp.Type.LINK,
+                                        webpageUrl: chat.text
+                                    }
+                                },
+                                scene: WechatApp.Scene.TIMELINE
+                            }, sharedSuccess(dfd), sharingFailed(dfd));
+                        });
+
                 } else {
                     WechatApp.share({
                         message: {
