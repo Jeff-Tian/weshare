@@ -47,7 +47,8 @@
     "org.apache.cordova.inappbrowser",
     "cordova-plugin-inappbrowser",
     "org.apache.cordova.dialogs",
-    "cordova-plugin-wechat"
+    "cordova-plugin-wechat",
+    "org.apache.cordova.console"
   ],
   "cordovaPlatforms": [
     "android",

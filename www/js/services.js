@@ -22,6 +22,10 @@ angular.module('starter.services', [])
                 chats.splice(chats.indexOf(chat), 1);
                 LocalJiy.remove(chat);
             },
+            removeAll: function () {
+                chats.splice(0, chats.length);
+                LocalJiy.removeAll();
+            },
             get: function (chatId) {
                 for (var i = 0; i < chats.length; i++) {
                     if (chats[i].guid === chatId || parseInt(chatId) === i) {
@@ -251,6 +255,14 @@ angular.module('starter.services', [])
                     }
                 }
             }
+
+            jiyList.set(list);
+        };
+
+        jiyList.removeAll = function () {
+            var list = jiyList.fetchAsArray();
+
+            list.splice(0, list.length);
 
             jiyList.set(list);
         };
@@ -522,8 +534,7 @@ angular.module('starter.services', [])
         return c;
     }])
 
-    .
-    factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', 'ChatCourier', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid, ChatCourier) {
+    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', 'ChatCourier', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid, ChatCourier) {
         var appId = 'wx19e1dfb500a973ab';
         var appSecret = '5884a99c7724917a8f16e17cd681256f';
         var redirectUrl = 'http://uat2.bridgeplus.cn/wechat/logon';
@@ -949,29 +960,29 @@ angular.module('starter.services', [])
                     }, function (reason) {
                         deferred.reject(reason);
                     }).then(function (token) {
-                        var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
+                    var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
 
-                        if (DeviceHelper.isInBrowser()) {
-                            url = Proxy.proxyNative(url);
+                    if (DeviceHelper.isInBrowser()) {
+                        url = Proxy.proxyNative(url);
+                    }
+
+                    $http({
+                        method: 'GET',
+                        url: url
+                    }).success(function (data) {
+                        if (data.errcode === 0) {
+                            data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+                            Setting.save(wechatPayJsApiTicketKey, data);
+                            deferred.resolve(data.ticket);
+                        } else {
+                            deferred.reject(data.errmsg);
                         }
-
-                        $http({
-                            method: 'GET',
-                            url: url
-                        }).success(function (data) {
-                            if (data.errcode === 0) {
-                                data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
-                                Setting.save(wechatPayJsApiTicketKey, data);
-                                deferred.resolve(data.ticket);
-                            } else {
-                                deferred.reject(data.errmsg);
-                            }
-                        }).error(function (reason) {
-                            deferred.reject(reason);
-                        });
-                    }, function (reason) {
+                    }).error(function (reason) {
                         deferred.reject(reason);
                     });
+                }, function (reason) {
+                    deferred.reject(reason);
+                });
             }
 
             return deferred.promise;
