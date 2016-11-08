@@ -805,7 +805,7 @@ angular.module('starter.services', [])
                     $http.get(chat.text)
                         .success(function (response) {
                             var $html = $(response);
-                            title = $html.find('.rich_media_title').text() || title;
+                            title = $html.find('.rich_media_title').text() || response.match(/<title>(.+?)<\/title>/)[1] || title;
                             desc = title;
                             // thumb = $html.find('img.rich_media_thumb').src || thumb;
                         })
@@ -856,7 +856,7 @@ angular.module('starter.services', [])
                     WechatAccount.execute(function () {
                         wx.onMenuShareTimeline({
                             title: text,
-                            link: 'http://zizhujy.com',
+                            link: 'http://blog.pa-ca.me',
                             imgUrl: 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
                             success: function () {
                                 alert('success');
@@ -882,7 +882,7 @@ angular.module('starter.services', [])
                             messageAction: "<action>dotalist</action>",
                             media: {
                                 type: WechatApp.Type.LINK,
-                                webpageUrl: 'http://zizhujy.com'
+                                webpageUrl: 'http://blog.pa-ca.me'
                             }
                         },
                         scene: WechatApp.Scene.TIMELINE   // share to Timeline
