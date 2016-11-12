@@ -1,8 +1,11 @@
 angular.module('starter.services', [])
 
     .factory('Chats', ['LocalJiy', function (LocalJiy) {
-        function refresh() {
-            chats = LocalJiy.fetchAsArray().unique(false).reverse();
+        function refresh(callback) {
+            LocalJiy.getAll(function (data) {
+                // .unique(false).reverse();
+                callback(data);
+            });
         }
 
         // Might use a resource here that returns a JSON array
@@ -10,29 +13,24 @@ angular.module('starter.services', [])
         // Some fake testing data
         var chats = [];
 
-        refresh();
+        refresh(function (data) {
+            chats = data;
+        });
 
         return {
             refresh: refresh,
 
-            all: function () {
-                return chats;
+            all: function (callback) {
+                LocalJiy.getAll(callback);
             },
-            remove: function (chat) {
-                chats.splice(chats.indexOf(chat), 1);
-                LocalJiy.remove(chat);
+            remove: function (chat, callback) {
+                LocalJiy.remove(chat, callback);
             },
-            removeAll: function () {
-                chats.splice(0, chats.length);
-                LocalJiy.removeAll();
+            removeAll: function (callback) {
+                LocalJiy.removeAll(callback);
             },
-            get: function (chatId) {
-                for (var i = 0; i < chats.length; i++) {
-                    if (chats[i].guid === chatId || parseInt(chatId) === i) {
-                        return chats[i];
-                    }
-                }
-                return null;
+            get: function (chatId, callback) {
+                LocalJiy.getByGuid(chatId, callback);
             }
         };
     }])
@@ -124,6 +122,150 @@ angular.module('starter.services', [])
         };
     }])
 
+    .factory('LocalJiyIndexedDB', function () {
+        var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+        var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
+        var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
+
+        var db = {
+            version: 1,
+            objectStoreName: 'LocalJiy',
+            instance: {},
+
+            errorHandler: function (error) {
+                window.alert('error: ' + error.target.code);
+                console.error(error);
+                debugger;
+            },
+
+            upgrade: function (e) {
+                var _db = e.target.result;
+                var names = _db.objectStoreNames;
+                var name = db.objectStoreName;
+
+                if (!names.contains(name)) {
+                    _db.createObjectStore(name, {keyPath: 'id', autoIncrement: true});
+                }
+            },
+
+            open: function (callback) {
+                var request = indexedDB.open(db.objectStoreName, db.version);
+                request.onerror = db.errorHandler;
+                request.onupgradeneeded = db.upgrade;
+                request.onsuccess = function (e) {
+                    db.instance = request.result;
+                    db.instance.onerror = db.errorHandler;
+
+                    callback();
+                };
+            },
+
+            getObjectStore: function (mode) {
+                var txn, store;
+
+                mode = mode || 'readonly';
+                txn = db.instance.transaction([db.objectStoreName], mode);
+                store = txn.objectStore(db.objectStoreName);
+
+                return store;
+            },
+
+            get: function (id, callback) {
+                db.open(function () {
+                    var
+                        store = db.getObjectStore(),
+                        request = store.get(id);
+
+                    request.onsuccess = function (e) {
+                        callback(e.target.result);
+                    };
+                });
+            },
+
+            getAll: function (callback) {
+                db.open(function () {
+                    var
+                        store = db.getObjectStore(),
+                        cursor = store.openCursor(),
+                        data = [];
+
+                    cursor.onsuccess = function (e) {
+                        var result = e.target.result;
+
+                        if (result &&
+                            result !== null) {
+
+                            data.push(result.value);
+                            result.continue();
+                        } else {
+                            callback && callback(data);
+                        }
+                    };
+                });
+            },
+
+            save: function (data, callback) {
+                db.open(function () {
+
+                    var store, request,
+                        mode = 'readwrite';
+
+                    store = db.getObjectStore(mode),
+
+                        request = data.id ?
+                            store.put(data) :
+                            store.add(data);
+
+                    request.onsuccess = callback;
+                });
+            },
+
+            'delete': function (id, callback) {
+                id = parseInt(id);
+                db.open(function () {
+                    var
+                        mode = 'readwrite',
+                        store, request;
+
+                    store = db.getObjectStore(mode);
+                    request = store.delete(id);
+                    request.onsuccess = callback;
+                });
+            },
+
+            deleteAll: function (callback) {
+                db.open(function () {
+                    var mode, store, request;
+
+                    mode = 'readwrite';
+                    store = db.getObjectStore(mode);
+                    request = store.clear();
+
+                    request.onsuccess = callback;
+                });
+
+            }
+        };
+
+        return db;
+    })
+
+    .factory('IndexedDBService', ['LocalJiyIndexedDB', function (IndexedDB) {
+        return {
+            getFromStorage: function (key, callback) {
+                return IndexedDB.get(key, callback);
+            },
+
+            saveToStorage: function (key, value, callback) {
+                if (!value) {
+                    return IndexedDB.delete(key, callback);
+                }
+
+                return IndexedDB.save({id: key, data: value}, callback);
+            }
+        };
+    }])
+
     .factory('StorageService', function () {
         return {
             getFromStorage: function (key) {
@@ -197,6 +339,64 @@ angular.module('starter.services', [])
         };
     }])
 
+    .factory('IndexedDBStorageFactoryService', ['IndexedDBService', function (IndexedDBService) {
+        function getAs(me, defaultType, key, callback) {
+            me.get(function (data) {
+                data = data || defaultType;
+
+                if (!key) {
+                    callback(data);
+                } else {
+                    callback(data[key] || defaultType);
+                }
+            });
+        }
+
+        function createService(key) {
+            return {
+                get: function (callback) {
+                    return IndexedDBService.getFromStorage(key, callback);
+                },
+
+                set: function (value, callback) {
+                    return IndexedDBService.saveToStorage(key, value, callback);
+                },
+
+                fetch: function (key, callback) {
+                    getAs(this, {}, key, callback);
+                },
+
+                fetchAsArray: function (key, callback) {
+                    getAs(this, [], key, callback);
+                },
+
+                save: function (key, value, callback) {
+                    this.fetch(null, function (data) {
+                        if (!(value instanceof Array)) {
+                            data[key] = angular.extend({}, data[key], value);
+                        } else {
+                            data[key] = value;
+                        }
+
+                        this.set(data, callback);
+                    });
+                },
+
+                delete: function (key, callback) {
+                    this.fetch(null, function (data) {
+                        delete data[key];
+
+                        this.set(data, callback);
+                    });
+                }
+            };
+        }
+
+        return {
+            create: createService
+        };
+    }])
+
     .factory('Setting', ['StorageFactoryService', function (StorageFactoryService) {
         return StorageFactoryService.create('jiy_setting');
     }])
@@ -222,73 +422,40 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('LocalJiy', ['StorageFactoryService', "Guid", function (StorageFactoryService, Guid) {
+    .factory('LocalJiy', ['StorageFactoryService', "Guid", 'LocalJiyIndexedDB', function (StorageFactoryService, Guid, LocalJiyIndexedDB) {
         var guid = Guid.guid;
-        var jiyList = StorageFactoryService.create('jiy_list');
+        var jiyList = LocalJiyIndexedDB;
 
-        jiyList.append = function (jiy) {
-            var list = jiyList.fetchAsArray();
+        jiyList.append = function (jiy, callback) {
             if (!jiy.guid) {
                 jiy.guid = guid();
             }
 
-            if (this.getByGuid(jiy.guid)) {
-                this.update(jiy);
-
-                return;
-            }
-
-            list.push(jiy);
-            jiyList.set(list);
-        };
-
-        jiyList.remove = function (jiy) {
-            var list = jiyList.fetchAsArray();
-
-            var index = list.indexOf(jiy);
-            if (index >= 0) {
-                list.splice(list.indexOf(jiy), 1);
-            } else {
-                for (var i = list.length - 1; i >= 0; i--) {
-                    if (list[i].guid === jiy.guid) {
-                        list.splice(i, 1);
-                    }
+            this.getByGuid(jiy.guid, function (data) {
+                if (data) {
+                    this.update(jiy, callback);
+                } else {
+                    jiyList.save({id: jiy.guid, data: jiy}, callback);
                 }
-            }
-
-            jiyList.set(list);
+            });
         };
 
-        jiyList.removeAll = function () {
-            var list = jiyList.fetchAsArray();
-
-            list.splice(0, list.length);
-
-            jiyList.set(list);
+        jiyList.remove = function (jiy, callback) {
+            jiyList.delete(jiy.guid, callback);
         };
 
-        jiyList.update = function (jiy) {
-            var list = jiyList.fetchAsArray();
-
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].guid === jiy.guid) {
-                    list[i] = jiy;
-                }
-            }
-
-            jiyList.set(list);
+        jiyList.removeAll = function (callback) {
+            jiyList.deleteAll(callback);
         };
 
-        jiyList.getByGuid = function (guid) {
-            var list = jiyList.fetchAsArray();
+        jiyList.update = function (jiy, callback) {
+            jiyList.get(jiy.guid, function (data) {
+                jiyList.save(jiy.guid, data, callback);
+            });
+        };
 
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].guid === guid) {
-                    return list[i];
-                }
-            }
-
-            return null;
+        jiyList.getByGuid = function (guid, callback) {
+            jiyList.get(guid, callback);
         };
 
         return jiyList;

@@ -48,14 +48,14 @@ angular.module('starter.controllers', ['jiyConfig'])
 
         $scope.saveDraft = function () {
             $scope.jiy.createdTime = new Date().toISOString();
-            LocalJiy.append($scope.jiy);
+            LocalJiy.append($scope.jiy, function () {
+                UI.toast('已保存草稿');
+                AppEvents.trigger(AppEvents.jiy.saved);
 
-            UI.toast('已保存草稿');
-            AppEvents.trigger(AppEvents.jiy.saved);
+                initJiy();
 
-            initJiy();
-
-            $state.go('tab.chats');
+                $state.go('tab.chats');
+            });
         };
 
         $scope.pictureAdded = function (input) {
@@ -102,17 +102,23 @@ angular.module('starter.controllers', ['jiyConfig'])
         });
     }])
 
-    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', '$q', function ($scope, Chats, AppEvents, $q) {
+    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', '$q', '$timeout', function ($scope, Chats, AppEvents, $q, $timeout) {
         // With the new view caching in Ionic, Controllers are only called
         // when they are recreated or on app start, instead of every page change.
         // To listen for when this page is active (for example, to refresh data),
         // listen for the $ionicView.enter event:
         //
         $scope.$on('$ionicView.enter', function (e) {
-            $scope.doRefresh();
+            // $scope.doRefresh();
         });
 
-        $scope.chats = Chats.all();
+        Chats.all(function (data) {
+            $timeout(function () {
+                $scope.chats = data.map(function (d) {
+                    return d.data;
+                });
+            });
+        });
 
         $scope.remove = function (chat) {
             Chats.remove(chat);
@@ -123,9 +129,14 @@ angular.module('starter.controllers', ['jiyConfig'])
         };
 
         $scope.doRefresh = function () {
-            Chats.refresh();
-            $scope.chats = Chats.all();
-            $scope.$broadcast('scroll.refreshComplete');
+            Chats.refresh(function (data) {
+                $timeout(function () {
+                    $scope.chats = data.map(function (d) {
+                        return d.data;
+                    });
+                    $scope.$broadcast('scroll.refreshComplete');
+                });
+            });
         };
 
         AppEvents.handle(AppEvents.jiy.saved, function () {
@@ -133,8 +144,13 @@ angular.module('starter.controllers', ['jiyConfig'])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', 'ChatCourier', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService, ChatCourier) {
-        $scope.chat = Chats.get($stateParams.chatId);
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', 'ChatCourier', '$timeout', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService, ChatCourier, $timeout) {
+        $scope.chat = {};
+        Chats.get($stateParams.chatId, function (data) {
+            $timeout(function () {
+                $scope.chat = data.data;
+            });
+        });
 
         $scope.ChatCourier = ChatCourier;
 
@@ -166,8 +182,9 @@ angular.module('starter.controllers', ['jiyConfig'])
 
                 chat[socialMedia] = response.data;
 
-                LocalJiy.update(chat);
-                UI.toast('成功发布到 ' + getName());
+                LocalJiy.update(chat, function () {
+                    UI.toast('成功发布到 ' + getName());
+                });
             }
 
             //{"ret":-1,"msg":"client request's parameters are invalid, invalid openid"}
@@ -213,62 +230,63 @@ angular.module('starter.controllers', ['jiyConfig'])
 
         $scope.publishToWordpress = function (w, chat) {
             $http.post(config.serviceUrls.wordpress.addPost, {
-                    wordpressUrl: w.url,
-                    wordpressUsername: w.username,
-                    wordpressPassword: w.password,
-                    title: chat.text.substr(0, 10),
-                    content: chat.text,
-                    status: 'publish',
-                    pictures: chat.pictures
-                        .filter(function (p) {
-                            return p.picture;
-                        })
-                        .map(function (p) {
-                            return FileReaderService.dataUriToBlob(p.picture);
-                        })
-                    //})
-                }, {
-                    transformRequest: function (data, getHeaders) {
-                        function appendFormData(formData, key, value) {
-                            if (value instanceof File) {
-                                formData.append(key, value, value.name);
-                                return;
-                            }
-
-                            if (value instanceof Blob) {
-                                formData.append(key, value, key + '.png');
-                                return;
-                            }
-
-                            if (typeof value !== 'undefined') {
-                                formData.append(key, value);
-                                return;
-                            }
+                wordpressUrl: w.url,
+                wordpressUsername: w.username,
+                wordpressPassword: w.password,
+                title: chat.text.substr(0, 10),
+                content: chat.text,
+                status: 'publish',
+                pictures: chat.pictures
+                    .filter(function (p) {
+                        return p.picture;
+                    })
+                    .map(function (p) {
+                        return FileReaderService.dataUriToBlob(p.picture);
+                    })
+                //})
+            }, {
+                transformRequest: function (data, getHeaders) {
+                    function appendFormData(formData, key, value) {
+                        if (value instanceof File) {
+                            formData.append(key, value, value.name);
+                            return;
                         }
 
-                        var headers = getHeaders();
-                        // To force a header like the following:
-                        // Content-Type:multipart/form-data; boundary=----WebKitFormBoundaryKqqmv0GHZUiUdzIx
-                        headers['Content-Type'] = undefined;
-                        var formData = new FormData();
-                        angular.forEach(data, function (value, key) {
-                            if (value instanceof Array) {
-                                for (var i = 0; i < value.length; i++) {
-                                    appendFormData(formData, key + '[' + i + ']', value[i]);
-                                }
-                            } else {
-                                appendFormData(formData, key, value);
-                            }
-                        });
+                        if (value instanceof Blob) {
+                            formData.append(key, value, key + '.png');
+                            return;
+                        }
 
-                        return formData;
+                        if (typeof value !== 'undefined') {
+                            formData.append(key, value);
+                            return;
+                        }
                     }
-                })
+
+                    var headers = getHeaders();
+                    // To force a header like the following:
+                    // Content-Type:multipart/form-data; boundary=----WebKitFormBoundaryKqqmv0GHZUiUdzIx
+                    headers['Content-Type'] = undefined;
+                    var formData = new FormData();
+                    angular.forEach(data, function (value, key) {
+                        if (value instanceof Array) {
+                            for (var i = 0; i < value.length; i++) {
+                                appendFormData(formData, key + '[' + i + ']', value[i]);
+                            }
+                        } else {
+                            appendFormData(formData, key, value);
+                        }
+                    });
+
+                    return formData;
+                }
+            })
                 .then(function (response) {
                     console.log(arguments);
                     chat[w.url] = response.data;
-                    LocalJiy.update(chat);
-                    UI.toast('成功发布到了 ' + w.url);
+                    LocalJiy.update(chat, function () {
+                        UI.toast('成功发布到了 ' + w.url);
+                    });
 
                     $scope.publishStatus[w.url] = true;
                 }, function (data) {
