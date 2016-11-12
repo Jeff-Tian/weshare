@@ -8,4 +8,5 @@ app.use(http.static('www'));
 app.get('/', function (req, res) {
     res.send('Hello Word');
 });
+
 app.listen(port, host);

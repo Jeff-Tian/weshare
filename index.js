@@ -13,7 +13,7 @@ function getStaticFolder() {
 
 var config = require('./www/js/config.js');
 
-app.set('port', (process.env.PORT || config.port.replace(':', '')));
+app.set('port', (process.env.PORT || 60001));
 
 app.all('*', function (req, res, next) {
     if (req.query.code && req.query.state) {
