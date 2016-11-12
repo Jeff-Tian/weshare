@@ -655,7 +655,7 @@ angular.module('starter.services', [])
 
             mainWordpress: {
                 main: true,
-                url: 'http://jiy.zizhujy.com/jiy',
+                url: 'http://blog.pa-ca.me',
                 username: '',
                 password: '',
                 info: '未连接'
