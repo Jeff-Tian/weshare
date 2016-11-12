@@ -144,7 +144,6 @@ angular.module('starter.services', [])
             errorHandler: function (error) {
                 window.alert('error: ' + error.target.code);
                 console.error(error);
-                debugger;
             },
 
             upgrade: function (e) {
@@ -207,7 +206,9 @@ angular.module('starter.services', [])
                             data.push(result.value);
                             result.continue();
                         } else {
-                            callback && callback(data);
+                            if (typeof callback === 'function') {
+                                callback(data);
+                            }
                         }
                     };
                 });
@@ -219,11 +220,11 @@ angular.module('starter.services', [])
                     var store, request,
                         mode = 'readwrite';
 
-                    store = db.getObjectStore(mode),
+                    store = db.getObjectStore(mode);
 
-                        request = data.id ?
-                            store.put(data) :
-                            store.add(data);
+                    request = data.id ?
+                        store.put(data) :
+                        store.add(data);
 
                     request.onsuccess = callback;
                 });
