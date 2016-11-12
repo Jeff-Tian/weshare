@@ -3,7 +3,7 @@ var config = {
     port: ':80',
     serviceUrls: {
         wordpress: {
-            addPost: '/service-proxy/wordpress/add-post'
+            addPost: '/wordpress/add-post'
         }
     }
 };
@@ -13,7 +13,7 @@ if (typeof module !== 'undefined' && module.exports) {
 } else if (angular) {
     angular.module('jiyConfig', ['ng.utils'])
         .run(['$rootScope', 'leavesTrimmer', function ($rootScope, leavesTrimmer) {
-            config.serviceUrls = leavesTrimmer.prepend(config.serviceUrls, config.host + config.port);
+            config.serviceUrls = leavesTrimmer.prepend(config.serviceUrls, config.host + config.port + '/service-proxy');
             $rootScope.config = config;
         }])
     ;
