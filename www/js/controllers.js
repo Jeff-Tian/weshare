@@ -125,7 +125,11 @@ angular.module('starter.controllers', ['jiyConfig'])
         };
 
         $scope.removeAllChats = function () {
-            Chats.removeAll();
+            Chats.removeAll(function () {
+                $timeout(function () {
+                    $scope.doRefresh();
+                });
+            });
         };
 
         $scope.doRefresh = function () {

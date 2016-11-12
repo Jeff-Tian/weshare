@@ -431,9 +431,10 @@ angular.module('starter.services', [])
                 jiy.guid = guid();
             }
 
-            this.getByGuid(jiy.guid, function (data) {
+            var self = this;
+            self.getByGuid(jiy.guid, function (data) {
                 if (data) {
-                    this.update(jiy, callback);
+                    self.update(jiy, callback);
                 } else {
                     jiyList.save({id: jiy.guid, data: jiy}, callback);
                 }
