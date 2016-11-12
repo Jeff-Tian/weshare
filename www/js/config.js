@@ -1,6 +1,6 @@
 var config = {
-    host: 'https://jiy.zizhujy.com',
-    port: ':60001',
+    host: 'http://jiy.pa-ca.me',
+    port: ':80',
     serviceUrls: {
         wordpress: {
             addPost: '/wordpress/add-post'
