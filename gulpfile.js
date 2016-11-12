@@ -216,7 +216,7 @@ gulp.task('mock-release', function (done) {
 
 gulp.task('local-release', ['mock-release', 'default']);
 
-gulp.task('release', ['mock-release', 'jshint', 'mocha', 'test']);
+gulp.task('release', ['mock-release', 'jshint', 'mocha']);
 
 gulp.task('mocha', function (done) {
     sh.exec('mocha', done);
