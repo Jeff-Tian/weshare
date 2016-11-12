@@ -3,7 +3,7 @@ var config = {
     port: ':80',
     serviceUrls: {
         wordpress: {
-            addPost: '/wordpress/add-post'
+            addPost: '/service-proxy/wordpress/add-post'
         }
     }
 };
