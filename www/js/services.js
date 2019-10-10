@@ -125,8 +125,6 @@ angular.module('starter.services', [])
     .factory('getIndexedDBReference', function () {
         return {
             getIndexedDBReference: function () {
-                console.log('getting indexedDb')
-
                 return window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
             }
         }

@@ -10,6 +10,8 @@ describe('LocalJiy', function () {
         console.log("spied = " + getIndexedDBReference.getIndexedDBReference())
 
         LocalJiy = _LocalJiy_;
+        getIndexedDBReference = _getIndexedDBReference_;
+        spyOn(getIndexedDBReference, 'getIndexedDBReference').and.returnValue(mockIndexedDB);
     }));
 
     it('can update a jiy', function () {
