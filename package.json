@@ -1,7 +1,11 @@
 {
-  "name": "jiy",
+  "name": "weshare",
   "version": "1.0.0",
-  "description": ": An Ionic project",
+  "description": "Sharing tool",
+  "scripts": {
+    "start": "node app.js",
+    "test": "mocha"
+  },
   "dependencies": {
     "async": "^1.5.2",
     "body-parser": "^1.15.0",

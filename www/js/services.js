@@ -122,8 +122,16 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('LocalJiyIndexedDB', function () {
-        var indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+    .factory('getIndexedDBReference', function () {
+        return {
+            getIndexedDBReference: function () {
+                return window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+            }
+        }
+    })
+
+    .factory('LocalJiyIndexedDB', ['getIndexedDBReference', function (getIndexedDBReference) {
+        var indexedDB = getIndexedDBReference.getIndexedDBReference();
         var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
         var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
 
@@ -144,7 +152,7 @@ angular.module('starter.services', [])
                 var name = db.objectStoreName;
 
                 if (!names.contains(name)) {
-                    _db.createObjectStore(name, {keyPath: 'id', autoIncrement: true});
+                    _db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
                 }
             },
 
@@ -248,7 +256,7 @@ angular.module('starter.services', [])
         };
 
         return db;
-    })
+    }])
 
     .factory('IndexedDBService', ['LocalJiyIndexedDB', function (IndexedDB) {
         return {
@@ -261,7 +269,7 @@ angular.module('starter.services', [])
                     return IndexedDB.delete(key, callback);
                 }
 
-                return IndexedDB.save({id: key, data: value}, callback);
+                return IndexedDB.save({ id: key, data: value }, callback);
             }
         };
     }])
@@ -436,7 +444,7 @@ angular.module('starter.services', [])
                 if (data) {
                     self.update(jiy, callback);
                 } else {
-                    jiyList.save({id: jiy.guid, data: jiy}, callback);
+                    jiyList.save({ id: jiy.guid, data: jiy }, callback);
                 }
             });
         };
@@ -799,8 +807,8 @@ angular.module('starter.services', [])
             authorize: function (successCallback, errorCallback) {
                 Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.base64EncodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
-                    return getUrlParams(url).code;
-                });
+                        return getUrlParams(url).code;
+                    });
             },
 
             inAppAuthorize: function (success, error) {
@@ -1143,29 +1151,29 @@ angular.module('starter.services', [])
                     }, function (reason) {
                         deferred.reject(reason);
                     }).then(function (token) {
-                    var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
+                        var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
 
-                    if (DeviceHelper.isInBrowser()) {
-                        url = Proxy.proxyNative(url);
-                    }
-
-                    $http({
-                        method: 'GET',
-                        url: url
-                    }).success(function (data) {
-                        if (data.errcode === 0) {
-                            data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
-                            Setting.save(wechatPayJsApiTicketKey, data);
-                            deferred.resolve(data.ticket);
-                        } else {
-                            deferred.reject(data.errmsg);
+                        if (DeviceHelper.isInBrowser()) {
+                            url = Proxy.proxyNative(url);
                         }
-                    }).error(function (reason) {
+
+                        $http({
+                            method: 'GET',
+                            url: url
+                        }).success(function (data) {
+                            if (data.errcode === 0) {
+                                data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+                                Setting.save(wechatPayJsApiTicketKey, data);
+                                deferred.resolve(data.ticket);
+                            } else {
+                                deferred.reject(data.errmsg);
+                            }
+                        }).error(function (reason) {
+                            deferred.reject(reason);
+                        });
+                    }, function (reason) {
                         deferred.reject(reason);
                     });
-                }, function (reason) {
-                    deferred.reject(reason);
-                });
             }
 
             return deferred.promise;
@@ -1280,7 +1288,7 @@ angular.module('starter.services', [])
             bind: function () {
                 function success(access_token) {
                     self.getUidHandler(access_token, function (openId) {
-                        Setting.save('qq', {openid: openId});
+                        Setting.save('qq', { openid: openId });
 
                         deferred.resolve(Setting.fetch('qq'));
                         AppEvents.trigger(AppEvents.qq.bound);
@@ -1412,7 +1420,7 @@ angular.module('starter.services', [])
                             method: 'POST',
                             url: url,
                             data: urlParams(data),
-                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                         });
 
                         return res;
@@ -1434,8 +1442,8 @@ angular.module('starter.services', [])
             authorize: function (successCallback, errorCallback) {
                 return Social.authorize('https://api.weibo.com/oauth2/authorize?client_id={0}&response_type=code&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
-                    return getUrlParams(url).code;
-                });
+                        return getUrlParams(url).code;
+                    });
             },
 
             tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
@@ -1588,7 +1596,7 @@ angular.module('starter.services', [])
                             method: 'POST',
                             url: url,
                             data: urlParams(data),
-                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                         });
 
                         return res;
@@ -1804,4 +1812,4 @@ angular.module('starter.services', [])
     .value('SocialAccounts', {
         wordpress: 'wordpress'
     })
-;
+    ;

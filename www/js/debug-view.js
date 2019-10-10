@@ -1,5 +1,9 @@
 (function ($) {
     function debugView($debugView, o) {
+        if (!$debugView) {
+            return;
+        }
+
         var now = new Date();
         var nowStr = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
 
@@ -28,6 +32,10 @@
 
     window.console.log = function (o) {
         console2.log.call(console, o);
+        console2.log('$ = ' + $);
+        if (!$) {
+            return;
+        }
         debugView($('#debug-view-log'), o);
     };
 
