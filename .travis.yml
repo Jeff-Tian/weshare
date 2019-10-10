@@ -7,9 +7,11 @@ install:
 - npm i
 script:
 - npm test
+- npm run build
 after_script:
 - npm i codecov && codecov
 deploy:
+  on: develop
   provider: heroku
   app: wesharing
   skip_cleanup: true

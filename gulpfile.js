@@ -115,10 +115,22 @@ var runSequence = require('run-sequence');
 gulp.task('minify-js-css', function () {
     var assets = useref.assets();
 
+    function isJs(file) {
+        console.log('file = ', file.path)
+        return file.path.endsWith('.js')
+    }
+
     return gulp.src('www/*.html')
         .pipe(assets)
-        .pipe(gulpif('*.js', uglify()))
-        .pipe(gulpif('*.css', minifyCss()))
+        .pipe(gulpif(isJs, uglify().on('error', function (uglify) {
+            console.error('fuck!')
+            console.error(uglify.message);
+            this.emit('end');
+        })))
+        .pipe(gulpif('*.css', minifyCss().on('error', function (minify) {
+            console.error(minify.message);
+            this.emit('end');
+        })))
         .pipe(assets.restore())
         .pipe(useref())
         .pipe(gulp.dest('dist'));
@@ -129,9 +141,9 @@ gulp.task('build', function (done) {
 });
 
 var env = {
-    dev: {ip: '121.199.35.151', domain: 'http://meiyanruhua.tao3w.com', user: 'root'},
-    test: {ip: '112.74.77.139', domain: 'http://test.meiyanruhua.com', user: 'root'},
-    production: {ip: '120.26.216.41', domain: '120.26.216.41', user: 'root'}
+    dev: { ip: '121.199.35.151', domain: 'http://meiyanruhua.tao3w.com', user: 'root' },
+    test: { ip: '112.74.77.139', domain: 'http://test.meiyanruhua.com', user: 'root' },
+    production: { ip: '120.26.216.41', domain: '120.26.216.41', user: 'root' }
 };
 
 function getRemote(env) {
