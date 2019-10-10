@@ -120,14 +120,17 @@ gulp.task('minify-js-css', function () {
         return file.path.endsWith('.js')
     }
 
+    function isCss(file) {
+        return file.path.endsWith('.css')
+    }
+
     return gulp.src('www/*.html')
         .pipe(assets)
         .pipe(gulpif(isJs, uglify().on('error', function (uglify) {
-            console.error('fuck!')
             console.error(uglify.message);
             this.emit('end');
         })))
-        .pipe(gulpif('*.css', minifyCss().on('error', function (minify) {
+        .pipe(gulpif(isCss, minifyCss().on('error', function (minify) {
             console.error(minify.message);
             this.emit('end');
         })))
