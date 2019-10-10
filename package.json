@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "mocha && gulp test",
-    "build": "gulp build"
+    "build": "gulp build",
+    "push": "git push && git push github develop && git push coding develop"
   },
   "dependencies": {
     "async": "^1.5.2",
