@@ -5,10 +5,6 @@ describe('LocalJiy', function () {
     beforeEach(module('starter.services'));
 
     beforeEach(inject(function (_LocalJiy_, _getIndexedDBReference_) {
-        getIndexedDBReference = _getIndexedDBReference_;
-        spyOn(getIndexedDBReference, 'getIndexedDBReference').and.returnValue(mockIndexedDB);
-        console.log("spied = " + getIndexedDBReference.getIndexedDBReference())
-
         LocalJiy = _LocalJiy_;
         getIndexedDBReference = _getIndexedDBReference_;
         spyOn(getIndexedDBReference, 'getIndexedDBReference').and.returnValue(mockIndexedDB);
