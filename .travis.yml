@@ -1,0 +1,18 @@
+sudo: false
+language: node_js
+cache: npm
+node_js:
+- '10'
+install:
+- npm i
+script:
+- npm test
+after_script:
+- npm i codecov && codecov
+deploy:
+  provider: heroku
+  app: wesharing
+  skip_cleanup: true
+  # travis encrypt $(heroku authorizations:create) --add deploy.api_key --pro
+  api_key:
+    secure: ciSqO5ii+hgr5IGfAHW9Q+omg2caLV4muDgz4amkI1dQuswCNTyknB727QxiCLTwHupM+qwOaSNgWar7wIbmRmNpUppK2TvUudsel5oM8HZK6avO7uHEZBfytmfwiymdD8UQd/+lngtX/9JS1d6BpJXDcsP0G0dqDbmZl0noTV9LtWIZY1lDN6Rtn72ytINCHU/gkNVsHheZ2mcP086ZBQgabjQUb4Z0Z0LQ2Ep9UbG6DTVlONPVSs/v7aBkwslyb1iOm3LYKxU562pvLSvw1cBwzAgPheJkmmhBbFvVRDe+edC2OMsMBLvfgqncKivu51cpIuvnm7DFPLzcAcnKobbCAj2MmZmhGHpS1tP3RumGfpVrTDSspEbrFLF64kCKVmxXpQOsHnBITFpUhxHxY1uWYuQI9VDjfr6j0R3iMW0+68e8kFj4uti4EgvMaGnueM62ozSCUpvPZjyaVSYYYm3mWVfFCb0ud4RdNA8w1kMINzYLhCljGbKLTeHhHi1uxtlGS9NYDos5xlApNyYMq1HN4TvTd/FN1tOh0yDnYYA88z+pzHdr0oD/qARiY93wVgUItU2LAUCaOMjkT59wXIZstSoSosMJHevEduz/9p8EKNX+RcO35yd8O1+r7dUMLXB+fIfZCVcPdkv/ooAVjqFpRk+7oSvy3g3kmHjbBug=

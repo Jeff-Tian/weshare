@@ -1,10 +1,13 @@
 describe('LocalJiy', function () {
     var LocalJiy;
+    var getIndexedDBReference;
 
     beforeEach(module('starter.services'));
 
-    beforeEach(inject(function (_LocalJiy_) {
+    beforeEach(inject(function (_LocalJiy_, _getIndexedDBReference_) {
         LocalJiy = _LocalJiy_;
+        getIndexedDBReference = _getIndexedDBReference_;
+        spyOn(getIndexedDBReference, 'getIndexedDBReference').and.returnValue(mockIndexedDB);
     }));
 
     it('can update a jiy', function () {
