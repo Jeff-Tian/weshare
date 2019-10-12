@@ -44,8 +44,7 @@ angular.module('starter.services', [])
 
             if (index >= 0) {
                 return url.substr(0, index);
-            }
-            else {
+            } else {
                 return url;
             }
         };
@@ -127,7 +126,7 @@ angular.module('starter.services', [])
             getIndexedDBReference: function () {
                 return window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
             }
-        }
+        };
     })
 
     .factory('LocalJiyIndexedDB', ['getIndexedDBReference', function (getIndexedDBReference) {
@@ -150,7 +149,7 @@ angular.module('starter.services', [])
                 var name = db.objectStoreName;
 
                 if (!names.contains(name)) {
-                    _db.createObjectStore(name, { keyPath: 'id', autoIncrement: true });
+                    _db.createObjectStore(name, {keyPath: 'id', autoIncrement: true});
                 }
             },
 
@@ -269,7 +268,7 @@ angular.module('starter.services', [])
                     return IndexedDB.delete(key, callback);
                 }
 
-                return IndexedDB.save({ id: key, data: value }, callback);
+                return IndexedDB.save({id: key, data: value}, callback);
             }
         };
     }])
@@ -444,7 +443,7 @@ angular.module('starter.services', [])
                 if (data) {
                     self.update(jiy, callback);
                 } else {
-                    jiyList.save({ id: jiy.guid, data: jiy }, callback);
+                    jiyList.save({id: jiy.guid, data: jiy}, callback);
                 }
             });
         };
@@ -610,7 +609,7 @@ angular.module('starter.services', [])
         };
     }])
 
-    .service('WechatApp', ['UI', function (UI) {
+    .service('WechatApp', ['UI', 'DeviceHelper', function (UI, DeviceHelper) {
         var wechatApp = null;
         var defaultMessage = '没有安装 Wechat Cordova 插件';
 
@@ -621,21 +620,63 @@ angular.module('starter.services', [])
         var isWechatDefined = (typeof Wechat !== 'undefined');
 
         if (!isWechatDefined) {
-            wechatApp = {
-                isInstalled: function (installed, notInstalled) {
-                    notInstalled(defaultMessage);
-                },
+            if (DeviceHelper.isWechatBrowser()) {
+                wechatApp = {
+                    Scene: {
+                        SESSION: 0, // 聊天界面
+                        TIMELINE: 1, // 朋友圈
+                        FAVORITE: 2  // 收藏
+                    },
 
-                auth: noop,
+                    Type: {
+                        APP: 1,
+                        EMOTION: 2,
+                        FILE: 3,
+                        IMAGE: 4,
+                        MUSIC: 5,
+                        VIDEO: 6,
+                        WEBPAGE: 7,
+                        MINI: 8
+                    },
 
-                share: function () {
-                    noop('请在微信浏览器中操作或者下载 "叽歪" APP操作');
-                },
+                    Mini: {
+                        RELEASE: 0, // 正式版
+                        TEST: 1, // 测试版
+                        PREVIEW: 2  // 体验版
+                    },
 
-                Type: {},
+                    share: function (msg, scene) {
+                        alert('sharing...');
+                        wx.ready(function () {      //需在用户可能点击分享按钮前就先调用
+                            wx.updateTimelineShareData({
+                                title: '纟', // 分享标题
+                                link: 'https://www.baidu.com', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+                                imgUrl: 'https://gw.alipayobjects.com/zos/rmsportal/XuVpGqBFxXplzvLjJBZB.svg', // 分享图标
+                                success: function () {
+                                    // 设置成功
+                                    alert('分享成功');
+                                }
+                            });
+                        });
+                    },
+                };
+            } else {
+                wechatApp = {
+                    isInstalled: function (installed, notInstalled) {
+                        notInstalled(defaultMessage);
+                    },
 
-                Scene: {}
-            };
+                    auth: noop,
+
+                    share: function () {
+                        noop('请在微信浏览器中操作或者下载 "叽歪" APP操作');
+                    },
+
+                    Type: {},
+
+                    Scene: {}
+                };
+            }
         } else {
             wechatApp = Wechat;
         }
@@ -757,13 +798,11 @@ angular.module('starter.services', [])
 
                     if (queries.code && hash.indexOf('?code') >= 0) {
                         successCallback(queries.code);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },
@@ -807,8 +846,8 @@ angular.module('starter.services', [])
             authorize: function (successCallback, errorCallback) {
                 Social.authorize('https://open.weixin.qq.com/connect/qrconnect?appid={0}&scope=snsapi_login&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.base64EncodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
-                        return getUrlParams(url).code;
-                    });
+                    return getUrlParams(url).code;
+                });
             },
 
             inAppAuthorize: function (success, error) {
@@ -1151,29 +1190,29 @@ angular.module('starter.services', [])
                     }, function (reason) {
                         deferred.reject(reason);
                     }).then(function (token) {
-                        var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
+                    var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
 
-                        if (DeviceHelper.isInBrowser()) {
-                            url = Proxy.proxyNative(url);
+                    if (DeviceHelper.isInBrowser()) {
+                        url = Proxy.proxyNative(url);
+                    }
+
+                    $http({
+                        method: 'GET',
+                        url: url
+                    }).success(function (data) {
+                        if (data.errcode === 0) {
+                            data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+                            Setting.save(wechatPayJsApiTicketKey, data);
+                            deferred.resolve(data.ticket);
+                        } else {
+                            deferred.reject(data.errmsg);
                         }
-
-                        $http({
-                            method: 'GET',
-                            url: url
-                        }).success(function (data) {
-                            if (data.errcode === 0) {
-                                data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
-                                Setting.save(wechatPayJsApiTicketKey, data);
-                                deferred.resolve(data.ticket);
-                            } else {
-                                deferred.reject(data.errmsg);
-                            }
-                        }).error(function (reason) {
-                            deferred.reject(reason);
-                        });
-                    }, function (reason) {
+                    }).error(function (reason) {
                         deferred.reject(reason);
                     });
+                }, function (reason) {
+                    deferred.reject(reason);
+                });
             }
 
             return deferred.promise;
@@ -1288,7 +1327,7 @@ angular.module('starter.services', [])
             bind: function () {
                 function success(access_token) {
                     self.getUidHandler(access_token, function (openId) {
-                        Setting.save('qq', { openid: openId });
+                        Setting.save('qq', {openid: openId});
 
                         deferred.resolve(Setting.fetch('qq'));
                         AppEvents.trigger(AppEvents.qq.bound);
@@ -1384,13 +1423,11 @@ angular.module('starter.services', [])
                         });
 
                         successCallback(queries.access_token);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 access_token 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },
@@ -1420,7 +1457,7 @@ angular.module('starter.services', [])
                             method: 'POST',
                             url: url,
                             data: urlParams(data),
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
                         });
 
                         return res;
@@ -1442,8 +1479,8 @@ angular.module('starter.services', [])
             authorize: function (successCallback, errorCallback) {
                 return Social.authorize('https://api.weibo.com/oauth2/authorize?client_id={0}&response_type=code&redirect_uri={1}&state={2}'
                     .format(appId, encodeURIComponent(redirectUrl), AppUrlHelper.encodeCurrentState()), redirectUrl, successCallback, errorCallback, function (url) {
-                        return getUrlParams(url).code;
-                    });
+                    return getUrlParams(url).code;
+                });
             },
 
             tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
@@ -1455,13 +1492,11 @@ angular.module('starter.services', [])
 
                     if (queries.code && hash.indexOf('&code') >= 0) {
                         successCallback(queries.code);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },
@@ -1596,7 +1631,7 @@ angular.module('starter.services', [])
                             method: 'POST',
                             url: url,
                             data: urlParams(data),
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
                         });
 
                         return res;
@@ -1812,4 +1847,4 @@ angular.module('starter.services', [])
     .value('SocialAccounts', {
         wordpress: 'wordpress'
     })
-    ;
+;
