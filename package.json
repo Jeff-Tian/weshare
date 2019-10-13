@@ -6,7 +6,8 @@
     "start": "node index.js",
     "test": "mocha && gulp test",
     "build": "gulp build",
-    "push": "git push && git push github develop && git push coding develop"
+    "push": "git push && git push github develop && git push coding develop",
+    "pull": "git pull -r && git pull github develop -r && git pull coding develop -r"
   },
   "dependencies": {
     "async": "^1.5.2",
