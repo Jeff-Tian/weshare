@@ -28,8 +28,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
             function (event, toState, toParams, fromState, fromParams, options) {
                 $http
                     .get('https://uniheart.pa-ca.me/wechat-dev/js-sdk-sign?select=wechat&url=' + encodeURIComponent(location.origin + location.pathname)).then(function (res) {
-                    console2.log('res = ', res)
-                    wx.config({
+                    var config = {
                         debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
                         appId: res.data.appId, // 必填，公众号的唯一标识
                         timestamp: res.data.timestamp, // 必填，生成签名的时间戳
@@ -39,6 +38,18 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
                             'updateAppMessageShareData',
                             'updateTimelineShareData'
                         ] // 必填，需要使用的JS接口列表
+                    };
+
+                    fundebug.notify('configure wx: ', {metaData: config});
+
+                    wx.config(config);
+
+                    wx.ready(function () {
+                        fundebug.notify('wx.config 成功');
+                    });
+
+                    wx.error(function (res) {
+                        fundebug.notifyError('wx.config 失败：', {metaData: res});
                     });
                 });
             });
