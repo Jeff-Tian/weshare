@@ -197,9 +197,7 @@ angular.module('starter.services', [])
                     cursor.onsuccess = function (e) {
                         var result = e.target.result;
 
-                        if (result &&
-                            result !== null) {
-
+                        if (result) {
                             data.push(result.value);
                             result.continue();
                         } else {
@@ -761,7 +759,6 @@ angular.module('starter.services', [])
         var nativeAppSecret = '528dade6fff1cd37cbe9d4771a00f009';
 
         var officialAccountAppId = 'wx252ae943a24222ae';
-        var officialAccountKey = '';
         var officialAccountAppSecret = '57b04361b34a6c9d92a1559bd0759465';
 
         var WechatAccount = Social.create(Social.wechat);
