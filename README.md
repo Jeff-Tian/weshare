@@ -4,6 +4,11 @@
 
 [![Build Status](https://travis-ci.com/Jeff-Tian/weshare.svg?branch=master)](https://travis-ci.com/Jeff-Tian/weshare)
 
+## Mirrors
+- https://sharing.herokuapp.com
+- https://share.js.org
+- https://jeff-tian.github.io/weshare
+
 ## update travis heroku api_key
 ```bash
 travis encrypt $(heroku authorizations:create) --add deploy.api_key --pro
