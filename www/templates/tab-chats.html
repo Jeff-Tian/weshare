@@ -7,7 +7,7 @@
         <ion-list>
             <ion-item class="item-remove-animate item-avatar item-icon-right" ng-repeat="chat in chats"
                       type="item-text-wrap" href="#/tab/chats/{{chat.guid || $index}}">
-                <img ng-src="{{chat.face}}">
+                <img ng-src="{{ChatCourier.getChatValidPictures(chat)[0].picture || 'img/ionic.png'}}">
 
                 <h2>{{chat.createdTime | date: 'yyyy-MM-dd hh:mm:ss'}}</h2>
 
@@ -15,8 +15,21 @@
                 <i class="icon ion-chevron-right icon-accessory"></i>
 
                 <ion-option-button class="button-assertive" ng-click="remove(chat)">
-                    Delete
+                    删除
                 </ion-option-button>
+            </ion-item>
+            <ion-item class="item item-icon-left item-remove-animate" ng-show="chats.length">
+                <i class="icon ion-minus-circled"></i>
+                向左滑动清除所有本地叽歪缓存
+                <span class="item-note">
+                    操作不可恢复
+                </span>
+                <ion-option-button class="button-assertive" ng-click="removeAllChats()">
+                    清除所有本地叽歪缓存
+                </ion-option-button>
+            </ion-item>
+            <ion-item ng-show="!chats.length">
+                什么都没有, 快叽歪点什么吧...
             </ion-item>
         </ion-list>
     </ion-content>

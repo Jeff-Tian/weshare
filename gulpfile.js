@@ -1,8 +1,6 @@
 var gulp = require('gulp');
 var gutil = require('gulp-util');
 var bower = require('bower');
-var concat = require('gulp-concat');
-//var sass = require('gulp-sass');
 var minifyCss = require('gulp-minify-css');
 var rename = require('gulp-rename');
 var sh = require('shelljs');
@@ -77,8 +75,6 @@ gulp.task('jshint', function () {
         .pipe(jshint.reporter('jshint-stylish'))
         .pipe(jshint.reporter('fail'));
 });
-
-var concat = require('gulp-concat');
 var sourceFiles = 'www/.';
 gulp.task('rsync', function (done) {
     sh.mkdir('dist');
@@ -115,10 +111,25 @@ var runSequence = require('run-sequence');
 gulp.task('minify-js-css', function () {
     var assets = useref.assets();
 
+    function isJs(file) {
+        console.log('file = ', file.path)
+        return file.path.endsWith('.js')
+    }
+
+    function isCss(file) {
+        return file.path.endsWith('.css')
+    }
+
     return gulp.src('www/*.html')
         .pipe(assets)
-        .pipe(gulpif('*.js', uglify()))
-        .pipe(gulpif('*.css', minifyCss()))
+        .pipe(gulpif(isJs, uglify().on('error', function (uglify) {
+            console.error(uglify.message);
+            this.emit('end');
+        })))
+        .pipe(gulpif(isCss, minifyCss().on('error', function (minify) {
+            console.error(minify.message);
+            this.emit('end');
+        })))
         .pipe(assets.restore())
         .pipe(useref())
         .pipe(gulp.dest('dist'));
@@ -129,9 +140,9 @@ gulp.task('build', function (done) {
 });
 
 var env = {
-    dev: {ip: '121.199.35.151', domain: 'http://meiyanruhua.tao3w.com', user: 'root'},
-    test: {ip: '112.74.77.139', domain: 'http://test.meiyanruhua.com', user: 'root'},
-    production: {ip: '120.26.216.41', domain: '120.26.216.41', user: 'root'}
+    dev: { ip: '121.199.35.151', domain: 'http://meiyanruhua.tao3w.com', user: 'root' },
+    test: { ip: '112.74.77.139', domain: 'http://test.meiyanruhua.com', user: 'root' },
+    production: { ip: '120.26.216.41', domain: '120.26.216.41', user: 'root' }
 };
 
 function getRemote(env) {
@@ -203,3 +214,9 @@ gulp.task('mock-release', function (done) {
 });
 
 gulp.task('local-release', ['mock-release', 'default']);
+
+gulp.task('release', ['mock-release', 'jshint', 'mocha']);
+
+gulp.task('mocha', function (done) {
+    sh.exec('mocha', done);
+});

@@ -1,5 +1,4 @@
-angular.module('starter.controllers', [])
-
+angular.module('starter.controllers', ['jiyConfig'])
     .controller('AppCtrl', ['$scope', 'Recover', 'Weibo', 'QQ', 'DeviceHelper', 'WechatAccount', function ($scope, Recover, Weibo, QQ, DeviceHelper, WechatAccount) {
 
         ionic.Platform.ready(function () {
@@ -35,7 +34,7 @@ angular.module('starter.controllers', [])
             $scope.jiy.pictures = [{
                 index: 0,
                 picture: null
-            }]
+            }];
         }
 
         $scope.jiy = {
@@ -49,14 +48,14 @@ angular.module('starter.controllers', [])
 
         $scope.saveDraft = function () {
             $scope.jiy.createdTime = new Date().toISOString();
-            LocalJiy.append($scope.jiy);
+            LocalJiy.append($scope.jiy, function () {
+                UI.toast('已保存草稿');
+                AppEvents.trigger(AppEvents.jiy.saved);
 
-            UI.toast('已保存草稿');
-            AppEvents.trigger(AppEvents.jiy.saved);
+                initJiy();
 
-            initJiy();
-
-            $state.go('tab.chats');
+                $state.go('tab.chats');
+            });
         };
 
         $scope.pictureAdded = function (input) {
@@ -103,25 +102,45 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', '$q', function ($scope, Chats, AppEvents, $q) {
+    .controller('ChatsCtrl', ['$scope', 'Chats', 'AppEvents', '$q', '$timeout', function ($scope, Chats, AppEvents, $q, $timeout) {
         // With the new view caching in Ionic, Controllers are only called
         // when they are recreated or on app start, instead of every page change.
         // To listen for when this page is active (for example, to refresh data),
         // listen for the $ionicView.enter event:
         //
-        //$scope.$on('$ionicView.enter', function (e) {
-        //    $scope.doRefresh();
-        //});
+        $scope.$on('$ionicView.enter', function (e) {
+            // $scope.doRefresh();
+        });
 
-        $scope.chats = Chats.all();
+        Chats.all(function (data) {
+            $timeout(function () {
+                $scope.chats = data.map(function (d) {
+                    return d.data;
+                });
+            });
+        });
+
         $scope.remove = function (chat) {
             Chats.remove(chat);
         };
 
+        $scope.removeAllChats = function () {
+            Chats.removeAll(function () {
+                $timeout(function () {
+                    $scope.doRefresh();
+                });
+            });
+        };
+
         $scope.doRefresh = function () {
-            Chats.refresh();
-            $scope.chats = Chats.all();
-            $scope.$broadcast('scroll.refreshComplete');
+            Chats.refresh(function (data) {
+                $timeout(function () {
+                    $scope.chats = data.map(function (d) {
+                        return d.data;
+                    });
+                    $scope.$broadcast('scroll.refreshComplete');
+                });
+            });
         };
 
         AppEvents.handle(AppEvents.jiy.saved, function () {
@@ -129,26 +148,17 @@ angular.module('starter.controllers', [])
         });
     }])
 
-    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService) {
-        $scope.chat = Chats.get($stateParams.chatId);
-
-        $scope.getValidPictures = function (chat) {
-            if (!chat.pictures || !(chat.pictures instanceof Array)) {
-                return [];
-            }
-
-            return chat.pictures.filter(function (p) {
-                return p.picture;
+    .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', 'ChatCourier', '$timeout', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService, ChatCourier, $timeout) {
+        $scope.chat = {};
+        Chats.get($stateParams.chatId, function (data) {
+            $timeout(function () {
+                $scope.chat = data.data;
             });
-        };
+        });
 
-        $scope.getChatType = function (chat) {
-            if ($scope.getValidPictures(chat.pictures).length === 0) {
-                return 'text';
-            }
+        $scope.ChatCourier = ChatCourier;
 
-            return 'link';
-        };
+        $scope.chatType = ChatCourier.getChatType($scope.chat);
 
         $scope.publish = function (socialMedia, chat) {
             function publishSuccess(response) {
@@ -176,12 +186,15 @@ angular.module('starter.controllers', [])
 
                 chat[socialMedia] = response.data;
 
-                LocalJiy.update(chat);
-                UI.toast('成功发布到 ' + getName());
+                LocalJiy.update(chat, function () {
+                    UI.toast('成功发布到 ' + getName());
+                });
             }
 
             //{"ret":-1,"msg":"client request's parameters are invalid, invalid openid"}
             function publishFail(reason) {
+                $scope.publishStatus[socialMedia] = false;
+
                 if (socialMedia === 'weibo') {
                     if (reason.error_code == 20019 || reason.data.error_code == 20019) {
                         UI.toast('发布重复内容到微博失败 ' + reason.error);
@@ -205,7 +218,6 @@ angular.module('starter.controllers', [])
                 }
             }
 
-
             if (socialMedia === 'weibo') {
                 Weibo.publish(chat.text)
                     .then(publishSuccess, publishFail);
@@ -213,7 +225,7 @@ angular.module('starter.controllers', [])
                 QQ.publish(chat.text)
                     .then(publishSuccess, publishFail);
             } else if (socialMedia === 'wechat') {
-                WechatAccount.publish(chat.text)
+                WechatAccount.publishChat(chat)
                     .then(publishSuccess, publishFail);
             } else {
                 UI.toast('暂不支持发布到 ' + socialMedia);
@@ -221,7 +233,7 @@ angular.module('starter.controllers', [])
         };
 
         $scope.publishToWordpress = function (w, chat) {
-            $http.post('/service-proxy/wordpress/add-post', {
+            $http.post(config.serviceUrls.wordpress.addPost, {
                 wordpressUrl: w.url,
                 wordpressUsername: w.username,
                 wordpressPassword: w.password,
@@ -276,16 +288,17 @@ angular.module('starter.controllers', [])
                 .then(function (response) {
                     console.log(arguments);
                     chat[w.url] = response.data;
-                    LocalJiy.update(chat);
-                    UI.toast('成功发布到了 ' + w.url);
+                    LocalJiy.update(chat, function () {
+                        UI.toast('成功发布到了 ' + w.url);
+                    });
+
+                    $scope.publishStatus[w.url] = true;
                 }, function (data) {
                     console.error(arguments);
                     UI.toast(data.data || '未收到服务器数据', 'long');
-                });
-        };
 
-        $scope.hasPublishedToWordpress = function (w, chat) {
-            return chat[w.url];
+                    $scope.publishStatus[w.url] = false;
+                });
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {
@@ -300,10 +313,22 @@ angular.module('starter.controllers', [])
             $scope.publish(Social.wechat, $scope.chat);
         });
 
+        $scope.publishStatus = {};
+
         $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
+
+        $scope.wordpressAccounts.map(function (w) {
+            if ($scope.chat[w.url]) {
+                $scope.publishStatus[w.url] = true;
+            }
+        });
+
+        $scope.publishStatus.weibo = !!$scope.chat.weibo;
+        $scope.publishStatus.qq = !!$scope.chat.qq;
+        $scope.publishStatus.wechat = !!$scope.chat.wechat;
     }])
 
-    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount, SavedSocialAccounts, SocialAccounts) {
+    .controller('AccountCtrl', ['$scope', 'Weibo', '$timeout', '$interval', 'Poll', 'AppEvents', 'QQ', 'UI', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', 'ChatCourier', function ($scope, Weibo, $timeout, $interval, Poll, AppEvents, QQ, UI, WechatAccount, SavedSocialAccounts, SocialAccounts, ChatCourier) {
         function resetPushState() {
             window.history.replaceState('account', 'Account', window.location.hash.substr(0, window.location.hash.indexOf('?')));
         }
@@ -410,13 +435,7 @@ angular.module('starter.controllers', [])
             }
         });
 
-        var mainWordpress = {
-            main: true,
-            url: 'http://jiy.zizhujy.com/jiy',
-            username: '',
-            password: '',
-            info: '未连接'
-        };
+        var mainWordpress = ChatCourier.mainWordpress;
 
         $scope.wordpressAccounts = SavedSocialAccounts.fetchAsArray(SocialAccounts.wordpress) || [];
 
@@ -432,13 +451,19 @@ angular.module('starter.controllers', [])
             $scope.wordpressAccounts.push({
                 url: '',
                 username: '',
-                password: ''
+                password: '',
+                info: '未连接'
             });
         };
 
         $scope.saveWordpressAccounts = function () {
             SavedSocialAccounts.save(SocialAccounts.wordpress, $scope.wordpressAccounts);
             UI.toast('已保存');
+        };
+
+        $scope.resetWordpressAccounts = function () {
+            $scope.wordpressAccounts = [mainWordpress];
+            UI.toast('已恢复');
         };
 
         AppEvents.handle(AppEvents.weibo.bound, function () {

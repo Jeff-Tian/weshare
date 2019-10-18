@@ -1,8 +1,11 @@
 angular.module('starter.services', [])
 
     .factory('Chats', ['LocalJiy', function (LocalJiy) {
-        function refresh() {
-            chats = LocalJiy.fetchAsArray().unique(false).reverse();
+        function refresh(callback) {
+            LocalJiy.getAll(function (data) {
+                // .unique(false).reverse();
+                callback(data);
+            });
         }
 
         // Might use a resource here that returns a JSON array
@@ -10,25 +13,24 @@ angular.module('starter.services', [])
         // Some fake testing data
         var chats = [];
 
-        refresh();
+        refresh(function (data) {
+            chats = data;
+        });
 
         return {
             refresh: refresh,
 
-            all: function () {
-                return chats;
+            all: function (callback) {
+                LocalJiy.getAll(callback);
             },
-            remove: function (chat) {
-                chats.splice(chats.indexOf(chat), 1);
-                LocalJiy.remove(chat);
+            remove: function (chat, callback) {
+                LocalJiy.remove(chat, callback);
             },
-            get: function (chatId) {
-                for (var i = 0; i < chats.length; i++) {
-                    if (chats[i].guid === chatId || parseInt(chatId) === i) {
-                        return chats[i];
-                    }
-                }
-                return null;
+            removeAll: function (callback) {
+                LocalJiy.removeAll(callback);
+            },
+            get: function (chatId, callback) {
+                LocalJiy.getByGuid(chatId, callback);
             }
         };
     }])
@@ -42,8 +44,7 @@ angular.module('starter.services', [])
 
             if (index >= 0) {
                 return url.substr(0, index);
-            }
-            else {
+            } else {
                 return url;
             }
         };
@@ -116,6 +117,156 @@ angular.module('starter.services', [])
                 })(navigator.userAgent || navigator.vendor || window.opera);
 
                 return check;
+            }
+        };
+    }])
+
+    .factory('getIndexedDBReference', function () {
+        return {
+            getIndexedDBReference: function () {
+                return window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+            }
+        };
+    })
+
+    .factory('LocalJiyIndexedDB', ['getIndexedDBReference', function (getIndexedDBReference) {
+        var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
+        var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
+
+        var db = {
+            version: 1,
+            objectStoreName: 'LocalJiy',
+            instance: {},
+
+            errorHandler: function (error) {
+                window.alert('error: ' + error.target.code);
+                console.error(error);
+            },
+
+            upgrade: function (e) {
+                var _db = e.target.result;
+                var names = _db.objectStoreNames;
+                var name = db.objectStoreName;
+
+                if (!names.contains(name)) {
+                    _db.createObjectStore(name, {keyPath: 'id', autoIncrement: true});
+                }
+            },
+
+            open: function (callback) {
+                var request = getIndexedDBReference.getIndexedDBReference().open(db.objectStoreName, db.version);
+                request.onerror = db.errorHandler;
+                request.onupgradeneeded = db.upgrade;
+                request.onsuccess = function (e) {
+                    db.instance = request.result;
+                    db.instance.onerror = db.errorHandler;
+
+                    callback();
+                };
+            },
+
+            getObjectStore: function (mode) {
+                var txn, store;
+
+                mode = mode || 'readonly';
+                txn = db.instance.transaction([db.objectStoreName], mode);
+                store = txn.objectStore(db.objectStoreName);
+
+                return store;
+            },
+
+            get: function (id, callback) {
+                db.open(function () {
+                    var
+                        store = db.getObjectStore(),
+                        request = store.get(id);
+
+                    request.onsuccess = function (e) {
+                        callback(e.target.result);
+                    };
+                });
+            },
+
+            getAll: function (callback) {
+                db.open(function () {
+                    var
+                        store = db.getObjectStore(),
+                        cursor = store.openCursor(),
+                        data = [];
+
+                    cursor.onsuccess = function (e) {
+                        var result = e.target.result;
+
+                        if (result) {
+                            data.push(result.value);
+                            result.continue();
+                        } else {
+                            if (typeof callback === 'function') {
+                                callback(data);
+                            }
+                        }
+                    };
+                });
+            },
+
+            save: function (data, callback) {
+                db.open(function () {
+
+                    var store, request,
+                        mode = 'readwrite';
+
+                    store = db.getObjectStore(mode);
+
+                    request = data.id ?
+                        store.put(data) :
+                        store.add(data);
+
+                    request.onsuccess = callback;
+                });
+            },
+
+            'delete': function (id, callback) {
+                id = parseInt(id);
+                db.open(function () {
+                    var
+                        mode = 'readwrite',
+                        store, request;
+
+                    store = db.getObjectStore(mode);
+                    request = store.delete(id);
+                    request.onsuccess = callback;
+                });
+            },
+
+            deleteAll: function (callback) {
+                db.open(function () {
+                    var mode, store, request;
+
+                    mode = 'readwrite';
+                    store = db.getObjectStore(mode);
+                    request = store.clear();
+
+                    request.onsuccess = callback;
+                });
+
+            }
+        };
+
+        return db;
+    }])
+
+    .factory('IndexedDBService', ['LocalJiyIndexedDB', function (IndexedDB) {
+        return {
+            getFromStorage: function (key, callback) {
+                return IndexedDB.get(key, callback);
+            },
+
+            saveToStorage: function (key, value, callback) {
+                if (!value) {
+                    return IndexedDB.delete(key, callback);
+                }
+
+                return IndexedDB.save({id: key, data: value}, callback);
             }
         };
     }])
@@ -193,6 +344,64 @@ angular.module('starter.services', [])
         };
     }])
 
+    .factory('IndexedDBStorageFactoryService', ['IndexedDBService', function (IndexedDBService) {
+        function getAs(me, defaultType, key, callback) {
+            me.get(function (data) {
+                data = data || defaultType;
+
+                if (!key) {
+                    callback(data);
+                } else {
+                    callback(data[key] || defaultType);
+                }
+            });
+        }
+
+        function createService(key) {
+            return {
+                get: function (callback) {
+                    return IndexedDBService.getFromStorage(key, callback);
+                },
+
+                set: function (value, callback) {
+                    return IndexedDBService.saveToStorage(key, value, callback);
+                },
+
+                fetch: function (key, callback) {
+                    getAs(this, {}, key, callback);
+                },
+
+                fetchAsArray: function (key, callback) {
+                    getAs(this, [], key, callback);
+                },
+
+                save: function (key, value, callback) {
+                    this.fetch(null, function (data) {
+                        if (!(value instanceof Array)) {
+                            data[key] = angular.extend({}, data[key], value);
+                        } else {
+                            data[key] = value;
+                        }
+
+                        this.set(data, callback);
+                    });
+                },
+
+                delete: function (key, callback) {
+                    this.fetch(null, function (data) {
+                        delete data[key];
+
+                        this.set(data, callback);
+                    });
+                }
+            };
+        }
+
+        return {
+            create: createService
+        };
+    }])
+
     .factory('Setting', ['StorageFactoryService', function (StorageFactoryService) {
         return StorageFactoryService.create('jiy_setting');
     }])
@@ -218,55 +427,41 @@ angular.module('starter.services', [])
         };
     }])
 
-    .factory('LocalJiy', ['StorageFactoryService', "Guid", function (StorageFactoryService, Guid) {
+    .factory('LocalJiy', ['StorageFactoryService', "Guid", 'LocalJiyIndexedDB', function (StorageFactoryService, Guid, LocalJiyIndexedDB) {
         var guid = Guid.guid;
-        var jiyList = StorageFactoryService.create('jiy_list');
+        var jiyList = LocalJiyIndexedDB;
 
-        jiyList.append = function (jiy) {
-            var list = jiyList.fetchAsArray();
+        jiyList.append = function (jiy, callback) {
             if (!jiy.guid) {
                 jiy.guid = guid();
             }
 
-            if (this.getByGuid(jiy.guid)) {
-                this.update(jiy);
-
-                return;
-            }
-
-            list.push(jiy);
-            jiyList.set(list);
-        };
-
-        jiyList.remove = function (jiy) {
-            var list = jiyList.fetchAsArray();
-            list.splice(list.indexOf(jiy), 1);
-
-            jiyList.set(list);
-        };
-
-        jiyList.update = function (jiy) {
-            var list = jiyList.fetchAsArray();
-
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].guid === jiy.guid) {
-                    list[i] = jiy;
+            var self = this;
+            self.getByGuid(jiy.guid, function (data) {
+                if (data) {
+                    self.update(jiy, callback);
+                } else {
+                    jiyList.save({id: jiy.guid, data: jiy}, callback);
                 }
-            }
-
-            jiyList.set(list);
+            });
         };
 
-        jiyList.getByGuid = function (guid) {
-            var list = jiyList.fetchAsArray();
+        jiyList.remove = function (jiy, callback) {
+            jiyList.delete(jiy.guid, callback);
+        };
 
-            for (var i = 0; i < list.length; i++) {
-                if (list[i].guid === guid) {
-                    return list[i];
-                }
-            }
+        jiyList.removeAll = function (callback) {
+            jiyList.deleteAll(callback);
+        };
 
-            return null;
+        jiyList.update = function (jiy, callback) {
+            jiyList.get(jiy.guid, function (data) {
+                jiyList.save(jiy.guid, data, callback);
+            });
+        };
+
+        jiyList.getByGuid = function (guid, callback) {
+            jiyList.get(guid, callback);
         };
 
         return jiyList;
@@ -283,7 +478,7 @@ angular.module('starter.services', [])
             get: function (deleteAfterGet) {
                 var recoverState = recoverStore.get();
 
-                if (!(deleteAfterGet === false)) {
+                if (deleteAfterGet !== false) {
                     recoverStore.set(null);
                 }
 
@@ -412,7 +607,7 @@ angular.module('starter.services', [])
         };
     }])
 
-    .service('WechatApp', ['UI', function (UI) {
+    .service('WechatApp', ['UI', 'DeviceHelper', function (UI, DeviceHelper) {
         var wechatApp = null;
         var defaultMessage = '没有安装 Wechat Cordova 插件';
 
@@ -423,21 +618,63 @@ angular.module('starter.services', [])
         var isWechatDefined = (typeof Wechat !== 'undefined');
 
         if (!isWechatDefined) {
-            wechatApp = {
-                isInstalled: function (installed, notInstalled) {
-                    notInstalled(defaultMessage);
-                },
+            if (DeviceHelper.isWechatBrowser()) {
+                wechatApp = {
+                    Scene: {
+                        SESSION: 0, // 聊天界面
+                        TIMELINE: 1, // 朋友圈
+                        FAVORITE: 2  // 收藏
+                    },
 
-                auth: noop,
+                    Type: {
+                        APP: 1,
+                        EMOTION: 2,
+                        FILE: 3,
+                        IMAGE: 4,
+                        MUSIC: 5,
+                        VIDEO: 6,
+                        WEBPAGE: 7,
+                        MINI: 8
+                    },
 
-                share: function () {
-                    noop('请在微信浏览器中操作或者下载 "叽歪" APP操作');
-                },
+                    Mini: {
+                        RELEASE: 0, // 正式版
+                        TEST: 1, // 测试版
+                        PREVIEW: 2  // 体验版
+                    },
 
-                Type: {},
+                    share: function (msg, scene) {
+                        alert('sharing...');
+                        wx.ready(function () {      //需在用户可能点击分享按钮前就先调用
+                            wx.updateTimelineShareData({
+                                title: '纟', // 分享标题
+                                link: 'https://www.baidu.com', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+                                imgUrl: 'https://gw.alipayobjects.com/zos/rmsportal/XuVpGqBFxXplzvLjJBZB.svg', // 分享图标
+                                success: function () {
+                                    // 设置成功
+                                    alert('分享成功');
+                                }
+                            });
+                        });
+                    },
+                };
+            } else {
+                wechatApp = {
+                    isInstalled: function (installed, notInstalled) {
+                        notInstalled(defaultMessage);
+                    },
 
-                Scene: {}
-            };
+                    auth: noop,
+
+                    share: function () {
+                        noop('请在微信浏览器中操作或者下载 "叽歪" APP操作');
+                    },
+
+                    Type: {},
+
+                    Scene: {}
+                };
+            }
         } else {
             wechatApp = Wechat;
         }
@@ -453,7 +690,66 @@ angular.module('starter.services', [])
         return wechatApp;
     }])
 
-    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid) {
+    .factory('ChatCourier', [function () {
+        var c = {
+            ChatType: {
+                text: 'text',
+                image: 'image',
+                link: 'link',
+                shareLink: 'shareLink'
+            },
+
+            mainWordpress: {
+                main: true,
+                url: 'http://blog.pa-ca.me',
+                username: '',
+                password: '',
+                info: '未连接'
+            },
+
+            getChatValidPictures: function (chat) {
+                if (!chat.pictures || !(chat.pictures instanceof Array)) {
+                    return [];
+                }
+
+                return chat.pictures.filter(function (p) {
+                    return p.picture;
+                });
+            },
+
+            getChatType: function (chat) {
+                var validPictures = c.getChatValidPictures(chat).length;
+
+                var urlPattern = /^(?:http[s]?):\/\/.+$/gi;
+
+                if (validPictures === 0) {
+                    if (!urlPattern.test(chat.text)) {
+                        return c.ChatType.text;
+                    } else {
+                        return c.ChatType.shareLink;
+                    }
+                } else {
+                    if (!chat.text && validPictures === 1) {
+                        return c.ChatType.image;
+                    }
+                }
+
+                return c.ChatType.link;
+            },
+
+            getMainWordpressLink: function (chat) {
+                if (!chat[c.mainWordpress.url]) {
+                    return '';
+                }
+
+                return chat[c.mainWordpress.url].link;
+            }
+        };
+
+        return c;
+    }])
+
+    .factory('WechatAccount', ['AppUrlHelper', 'DeviceHelper', 'Recover', 'Proxy', '$http', '$q', 'Setting', 'UI', 'AppEvents', 'Social', 'WechatApp', 'Guid', 'ChatCourier', function (AppUrlHelper, DeviceHelper, Recover, Proxy, $http, $q, Setting, UI, AppEvents, Social, WechatApp, Guid, ChatCourier) {
         var appId = 'wx19e1dfb500a973ab';
         var appSecret = '5884a99c7724917a8f16e17cd681256f';
         var redirectUrl = 'http://uat2.bridgeplus.cn/wechat/logon';
@@ -463,10 +759,31 @@ angular.module('starter.services', [])
         var nativeAppSecret = '528dade6fff1cd37cbe9d4771a00f009';
 
         var officialAccountAppId = 'wx252ae943a24222ae';
-        var officialAccountKey = '';
         var officialAccountAppSecret = '57b04361b34a6c9d92a1559bd0759465';
 
         var WechatAccount = Social.create(Social.wechat);
+
+        function sharedSuccess(dfd) {
+            return function () {
+                var m = '已分享到朋友圈';
+                UI.toast(m);
+
+                dfd.resolve(m);
+            };
+        }
+
+        function sharingFailed(dfd) {
+            return function (reason) {
+                if (reason === '用户点击取消并返回') {
+                    var m = '分享取消';
+                    UI.toast(m);
+                    dfd.reject(m);
+                } else {
+                    UI.toast(reason);
+                    dfd.reject(reason);
+                }
+            };
+        }
 
         WechatAccount = angular.extend({}, WechatAccount, {
             tryGetCodeFromWebCallback: function (successCallback, errorCallback, noCodePresentCallback) {
@@ -478,13 +795,11 @@ angular.module('starter.services', [])
 
                     if (queries.code && hash.indexOf('?code') >= 0) {
                         successCallback(queries.code);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },
@@ -660,6 +975,92 @@ angular.module('starter.services', [])
                 return deferred.promise;
             },
 
+            publishChat: function (chat) {
+                var dfd = $q.defer();
+
+                var mainWordpressLink = ChatCourier.getMainWordpressLink(chat);
+                var text = chat.text;
+
+                if (mainWordpressLink) {
+                    text += '\r\n' + mainWordpressLink;
+                }
+
+                var validPictures = ChatCourier.getChatValidPictures(chat);
+                var chatType = ChatCourier.getChatType(chat);
+
+                if (chatType === ChatCourier.ChatType.text) {
+                    WechatApp.share({
+                        text: text,
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                } else if (chatType === ChatCourier.ChatType.image) {
+                    WechatApp.share({
+                        message: {
+                            title: text,
+                            description: text,
+                            thumb: 'www/img/ionic.png',
+                            mediaTagName: '叽-歪',
+                            messageExt: '有事叽歪, 没事叽歪',
+                            messageAction: '<action>jiy</action>',
+                            media: {
+                                type: WechatApp.Type.IMAGE,
+                                image: validPictures[0].picture
+                            }
+                        },
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                } else if (chatType === ChatCourier.ChatType.shareLink) {
+                    var title = '叽歪 - 有事叽歪, 没事叽歪';
+                    var desc = '叽歪 - 有事叽歪, 没事叽歪';
+                    var thumb = 'www/img/Logo108x108.png';
+
+                    $http.get(chat.text)
+                        .success(function (response) {
+                            var $html = $(response);
+                            title = $html.find('.rich_media_title').text() || response.match(/<title>(.+?)<\/title>/)[1] || title;
+                            desc = title;
+                            // thumb = $html.find('img.rich_media_thumb').src || thumb;
+                        })
+                        .finally(function () {
+
+                            WechatApp.share({
+                                message: {
+                                    title: title,
+                                    description: desc,
+                                    thumb: thumb,
+                                    mediaTagName: '叽-歪',
+                                    messageExt: '有事叽歪, 没事叽歪',
+                                    messageAction: '<action>jiy</action>',
+                                    media: {
+                                        type: WechatApp.Type.LINK,
+                                        webpageUrl: chat.text
+                                    }
+                                },
+                                scene: WechatApp.Scene.TIMELINE
+                            }, sharedSuccess(dfd), sharingFailed(dfd));
+                        });
+
+                } else {
+                    WechatApp.share({
+                        message: {
+                            title: text,
+                            description: text,
+                            thumb: 'www/img/ionic.png',
+                            mediaTagName: '叽-歪',
+                            messageExt: '有事叽歪, 没事叽歪',
+                            messageAction: '<action>jiy</action>',
+                            media: {
+                                type: WechatApp.Type.LINK,
+                                webpageUrl: mainWordpressLink
+                            }
+                        },
+                        scene: WechatApp.Scene.TIMELINE
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
+                }
+
+                return dfd.promise;
+            },
+
             publish: function (text, pictures) {
                 var dfd = $q.defer();
 
@@ -667,7 +1068,7 @@ angular.module('starter.services', [])
                     WechatAccount.execute(function () {
                         wx.onMenuShareTimeline({
                             title: text,
-                            link: 'http://zizhujy.com',
+                            link: 'http://blog.pa-ca.me',
                             imgUrl: 'https://avatars0.githubusercontent.com/u/171665?v=3&s=48',
                             success: function () {
                                 alert('success');
@@ -693,24 +1094,11 @@ angular.module('starter.services', [])
                             messageAction: "<action>dotalist</action>",
                             media: {
                                 type: WechatApp.Type.LINK,
-                                webpageUrl: 'http://zizhujy.com'
+                                webpageUrl: 'http://blog.pa-ca.me'
                             }
                         },
                         scene: WechatApp.Scene.TIMELINE   // share to Timeline
-                    }, function () {
-                        var m = '已分享到朋友圈';
-                        UI.toast(m);
-                        dfd.resolve(m);
-                    }, function (reason) {
-                        if (reason === '用户点击取消并返回') {
-                            var m = '分享取消';
-                            UI.toast(m);
-                            dfd.reject(m);
-                        } else {
-                            UI.toast(reason);
-                            dfd.reject(reason);
-                        }
-                    });
+                    }, sharedSuccess(dfd), sharingFailed(dfd));
                 }
 
                 return dfd.promise;
@@ -799,29 +1187,29 @@ angular.module('starter.services', [])
                     }, function (reason) {
                         deferred.reject(reason);
                     }).then(function (token) {
-                        var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
+                    var url = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi'.format(token);
 
-                        if (DeviceHelper.isInBrowser()) {
-                            url = Proxy.proxyNative(url);
+                    if (DeviceHelper.isInBrowser()) {
+                        url = Proxy.proxyNative(url);
+                    }
+
+                    $http({
+                        method: 'GET',
+                        url: url
+                    }).success(function (data) {
+                        if (data.errcode === 0) {
+                            data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
+                            Setting.save(wechatPayJsApiTicketKey, data);
+                            deferred.resolve(data.ticket);
+                        } else {
+                            deferred.reject(data.errmsg);
                         }
-
-                        $http({
-                            method: 'GET',
-                            url: url
-                        }).success(function (data) {
-                            if (data.errcode === 0) {
-                                data.expires_in = parseFloat(data.expires_in) + (new Date().getTime() / 1000);
-                                Setting.save(wechatPayJsApiTicketKey, data);
-                                deferred.resolve(data.ticket);
-                            } else {
-                                deferred.reject(data.errmsg);
-                            }
-                        }).error(function (reason) {
-                            deferred.reject(reason);
-                        });
-                    }, function (reason) {
+                    }).error(function (reason) {
                         deferred.reject(reason);
                     });
+                }, function (reason) {
+                    deferred.reject(reason);
+                });
             }
 
             return deferred.promise;
@@ -1032,13 +1420,11 @@ angular.module('starter.services', [])
                         });
 
                         successCallback(queries.access_token);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 access_token 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },
@@ -1103,13 +1489,11 @@ angular.module('starter.services', [])
 
                     if (queries.code && hash.indexOf('&code') >= 0) {
                         successCallback(queries.code);
-                    }
-                    else {
+                    } else {
                         //errorCallback('得到的 code 为空');
                         noCodePresentCallback();
                     }
-                }
-                else {
+                } else {
                     noCodePresentCallback();
                 }
             },

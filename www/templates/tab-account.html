@@ -3,7 +3,7 @@
         <ion-list ng-repeat-start="w in wordpressAccounts" ng-show="w.main">
             <ion-item class="item item-divider">
                 <i class="icon ion-social-wordpress"></i>
-                Wordpress 账号 (你可以添加多个, 主账号不可删除)
+                Wordpress 账号 (可添加多个, 主账号不可删除)
             </ion-item>
         </ion-list>
         <ion-list class="list" ng-repeat-end>
@@ -56,6 +56,10 @@
         </button>
         <button class="button button-block button-balanced" ng-click="saveWordpressAccounts()">
             保存
+        </button>
+        <button class="button button-block button-assertive" ng-click="resetWordpressAccounts()"
+                ng-show="showResetWordpressButton">
+            恢复 Wordpress 设置
         </button>
 
         <ion-list>
