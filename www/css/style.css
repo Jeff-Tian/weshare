@@ -28,3 +28,12 @@
 .images img {
     max-width: 100%;
 }
+
+/* To allow user select text */
+/* https://forum.ionicframework.com/t/how-to-make-text-selectable/4384 */
+.scroll {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
