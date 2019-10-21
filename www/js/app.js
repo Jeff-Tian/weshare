@@ -7,7 +7,7 @@
 // 'starter.controllers' is found in controllers.js
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
 
-    .run(['$ionicPlatform', '$rootScope', 'ChatCourier', '$http', function ($ionicPlatform, $rootScope, ChatCourier, $http) {
+    .run(['$ionicPlatform', '$rootScope', 'ChatCourier', '$http', 'UI', function ($ionicPlatform, $rootScope, ChatCourier, $http, UI) {
         $ionicPlatform.ready(function () {
             // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
             // for form inputs)
@@ -45,10 +45,12 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
                     wx.config(config);
 
                     wx.ready(function () {
+                        UI.toast('微信分享配置成功。');
                         fundebug.notify('wx.config 成功');
                     });
 
                     wx.error(function (res) {
+                        UI.toast('微信分享配置失败……');
                         fundebug.notifyError('wx.config 失败：', {metaData: res});
                     });
                 });
