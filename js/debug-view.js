@@ -32,7 +32,6 @@
 
     window.console.log = function (o) {
         console2.log.call(console, o);
-        console2.log('$ = ' + $);
         if (!$) {
             return;
         }

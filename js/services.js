@@ -643,20 +643,27 @@ angular.module('starter.services', [])
                         PREVIEW: 2  // 体验版
                     },
 
-                    share: function (msg, scene) {
+                    share: function (data, successCallback, errorCallback) {
                         wx.ready(function () {      //需在用户可能点击分享按钮前就先调用
-                            console.log('share ready', wx, scene)
-                            UI.toast('微信分享已连接。')
-                            wx.updateTimelineShareData({
-                                title: msg, // 分享标题
-                                link: 'https://share.js.org/', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
-                                imgUrl: 'https://gw.alipayobjects.com/zos/rmsportal/XuVpGqBFxXplzvLjJBZB.svg', // 分享图标
-                                success: function () {
-                                    // 设置成功
-                                    UI.toast('分享成功！');
-                                }
-                            });
-                            UI.toast('微信分享已设置。');
+                            UI.toast('微信分享已连接。', 'short')
+
+                            switch (data.scene) {
+                                case wechatApp.Scene.TIMELINE:
+                                    wx.updateTimelineShareData({
+                                        title: data.text, // 分享标题
+                                        link: 'https://share.js.org/', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+                                        imgUrl: 'http://share.js.org/img/ionic.png', // 分享图标
+                                        success: function () {
+                                            // 设置成功
+                                            UI.toast('微信分享设置已成功！', 'short');
+                                        }
+                                    });
+                                    break;
+                                default:
+                                    UI.toast('不支持的分享场景：' + data.scene);
+                                    break;
+                            }
+                            UI.toast('微信分享已设置。', 'short');
                         });
                     },
                 };
@@ -1024,7 +1031,6 @@ angular.module('starter.services', [])
                             // thumb = $html.find('img.rich_media_thumb').src || thumb;
                         })
                         .finally(function () {
-
                             WechatApp.share({
                                 message: {
                                     title: title,
