@@ -129,7 +129,7 @@ angular.module('starter.services', [])
         };
     })
 
-    .factory('LocalJiyIndexedDB', ['getIndexedDBReference', function (getIndexedDBReference) {
+    .factory('LocalJiyIndexedDB', ['getIndexedDBReference', 'UI', function (getIndexedDBReference, UI) {
         var IDBTransaction = window.IDBTransaction || window.webkitIDBTransaction || window.msIDBTransaction;
         var IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.msIDBKeyRange;
 
@@ -157,9 +157,11 @@ angular.module('starter.services', [])
                 var request = getIndexedDBReference.getIndexedDBReference().open(db.objectStoreName, db.version);
                 request.onerror = db.errorHandler;
                 request.onupgradeneeded = db.upgrade;
-                request.onsuccess = function (e) {
+                request.onsuccess = function () {
                     db.instance = request.result;
                     db.instance.onerror = db.errorHandler;
+
+                    UI.toast('IndexedDB Open', 'short');
 
                     callback();
                 };
