@@ -644,17 +644,17 @@ angular.module('starter.services', [])
                     },
 
                     share: function (data, successCallback, errorCallback) {
-                        wx.ready(function () {      //需在用户可能点击分享按钮前就先调用
+                        wx.ready(function () {
                             UI.toast('微信分享已连接。', 'short')
+                            console2.log('data = ', data);
 
                             switch (data.scene) {
                                 case wechatApp.Scene.TIMELINE:
                                     wx.updateTimelineShareData({
-                                        title: data.text, // 分享标题
-                                        link: 'https://share.js.org/', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
-                                        imgUrl: 'http://share.js.org/img/ionic.png', // 分享图标
+                                        title: data.message ? data.message.title : data.text,
+                                        link: data.message && data.message.media && data.message.media.webpageUrl ? ('https://share.js.org/to=' + encodeURIComponent(data.message.media.webpageUrl)) : window.location.href,
+                                        imgUrl: data.message && data.message.thumb ? data.message.thumb : 'http://share.js.org/img/ionic.png',
                                         success: function () {
-                                            // 设置成功
                                             UI.toast('微信分享设置已成功！', 'short');
                                         }
                                     });
@@ -1025,6 +1025,7 @@ angular.module('starter.services', [])
 
                     $http.get(chat.text)
                         .success(function (response) {
+                            console2.log('res = ', response)
                             var $html = $(response);
                             title = $html.find('.rich_media_title').text() || response.match(/<title>(.+?)<\/title>/)[1] || title;
                             desc = title;
