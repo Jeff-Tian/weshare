@@ -7,7 +7,7 @@
 // 'starter.controllers' is found in controllers.js
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
 
-    .run(['$ionicPlatform', '$rootScope', 'ChatCourier', '$http', 'UI', function ($ionicPlatform, $rootScope, ChatCourier, $http, UI) {
+    .run(['$ionicPlatform', '$rootScope', 'ChatCourier', function ($ionicPlatform, $rootScope, ChatCourier) {
         $ionicPlatform.ready(function () {
             // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
             // for form inputs)
@@ -23,38 +23,6 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
         });
 
         $rootScope.ChatCourier = ChatCourier;
-
-        $rootScope.$on('$stateChangeStart',
-            function (event, toState, toParams, fromState, fromParams, options) {
-                $http
-                    .get('https://uniheart.pa-ca.me/wechat-dev/js-sdk-sign?select=wechat&url=' + encodeURIComponent(location.origin + location.pathname)).then(function (res) {
-                    var config = {
-                        debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
-                        appId: res.data.appId, // 必填，公众号的唯一标识
-                        timestamp: res.data.timestamp, // 必填，生成签名的时间戳
-                        nonceStr: res.data.nonceStr, // 必填，生成签名的随机串
-                        signature: res.data.signature, // 必填，签名
-                        jsApiList: [
-                            'updateAppMessageShareData',
-                            'updateTimelineShareData'
-                        ] // 必填，需要使用的JS接口列表
-                    };
-
-                    fundebug.notify('configure wx: ', {metaData: config});
-
-                    wx.config(config);
-
-                    wx.ready(function () {
-                        UI.toast('微信分享配置成功。', 'short');
-                        fundebug.notify('wx.config 成功');
-                    });
-
-                    wx.error(function (res) {
-                        UI.toast('微信分享配置失败……', 'short');
-                        fundebug.notifyError('wx.config 失败：', {metaData: res});
-                    });
-                });
-            });
     }])
 
     .config(['$stateProvider', '$urlRouterProvider', function ($stateProvider, $urlRouterProvider) {
@@ -66,6 +34,10 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
         $stateProvider
 
         // setup an abstract state for the tabs directive
+            .state('share', {
+                url: '/share',
+                templateUrl: 'templates/share.html'
+            })
             .state('tab', {
                 url: '/tab',
                 abstract: true,
