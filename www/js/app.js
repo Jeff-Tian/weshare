@@ -45,12 +45,12 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services'])
                     wx.config(config);
 
                     wx.ready(function () {
-                        UI.toast('微信分享配置成功。');
+                        UI.toast('微信分享配置成功。', 'short');
                         fundebug.notify('wx.config 成功');
                     });
 
                     wx.error(function (res) {
-                        UI.toast('微信分享配置失败……');
+                        UI.toast('微信分享配置失败……', 'short');
                         fundebug.notifyError('wx.config 失败：', {metaData: res});
                     });
                 });
