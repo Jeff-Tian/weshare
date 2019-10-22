@@ -652,7 +652,7 @@ angular.module('starter.services', [])
                                 case wechatApp.Scene.TIMELINE:
                                     wx.updateTimelineShareData({
                                         title: data.message ? data.message.title : data.text,
-                                        link: data.message && data.message.media && data.message.media.webpageUrl ? ('https://share.js.org/to=' + encodeURIComponent(data.message.media.webpageUrl)) : window.location.href,
+                                        link: data.message && data.message.media && data.message.media.webpageUrl ? ('https://share.js.org/to?to=' + encodeURIComponent(data.message.media.webpageUrl)) : window.location.href,
                                         imgUrl: data.message && data.message.thumb ? data.message.thumb : 'http://share.js.org/img/ionic.png',
                                         success: function () {
                                             UI.toast('微信分享设置已成功！', 'short');
@@ -1030,6 +1030,10 @@ angular.module('starter.services', [])
                             title = $html.find('.rich_media_title').text() || response.match(/<title>(.+?)<\/title>/)[1] || title;
                             desc = title;
                             // thumb = $html.find('img.rich_media_thumb').src || thumb;
+                        })
+                        .error(function (error) {
+                            title = prompt('请输入链接标题：');
+                            thumb = prompt('请输入分享图标 URL：');
                         })
                         .finally(function () {
                             WechatApp.share({
