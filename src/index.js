@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import './style.css';
 import Icon from '../resources/icon.png';
+import 'victormono'
 
 function component() {
     const element = document.createElement('div');
