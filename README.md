@@ -23,6 +23,10 @@ ssh-keygen -t rsa -b 4096 -C "$(git config user.email)" -f gh-pages -N ""
 #   gh-pages     (private key)
 ```
 
+## Development
+
+This project is initially a very old Ionic project. But now I'm going to use webpack inside it, where in the [`~/src`](./src) folder will be.
+
 ## Related accounts
 
 ### open.weixin.qq.com
