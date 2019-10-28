@@ -13,7 +13,20 @@ module.exports = {
     ],
     output: {
         path: path.resolve(__dirname, 'dist/from'),
-        filename: '[name].bundle.js'
+        filename: '[name].[contenthash].js'
+    },
+    optimization: {
+        moduleIds: 'hashed',
+        runtimeChunk: 'single',
+        splitChunks: {
+            cacheGroups: {
+                vendor: {
+                    test: /[\\/]node_moduels[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all'
+                }
+            }
+        }
     },
     module: {
         rules: [
