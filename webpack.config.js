@@ -4,7 +4,7 @@ const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 module.exports = {
     mode: process.env.NODE_ENV || 'development',
-    entry: {app: './src/index.ts', print: './src/prints.js'},
+    entry: {app: './src/index.tsx'},
     devtool: 'inline-source-map',
     devServer: {
         contentBase: './dist',
@@ -13,7 +13,9 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            title: '叽歪分享 | 向世界叽歪'
+            title: '叽歪分享 | 向世界叽歪',
+            template: './src/index.ejs',
+            filename: './index.html'
         })
     ],
     output: {
@@ -71,8 +73,18 @@ module.exports = {
                 use: [
                     'xml-loader'
                 ]
+            },
+            // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
+            {
+                enforce: "pre",
+                test: /\.js$/,
+                loader: "source-map-loader"
             }
         ]
+    },
+    externals: {
+        "react": "React",
+        "react-dom": "ReactDOM"
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js']
