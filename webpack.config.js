@@ -21,7 +21,7 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist/from'),
         filename: '[name].[hash].js',
-        publicPath: '/'
+        publicPath: process.env.NODE_ENV === 'production' ? '/from' : '/'
     },
     optimization: {
         moduleIds: 'hashed',
