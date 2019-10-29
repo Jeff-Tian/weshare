@@ -1,5 +1,6 @@
 import React from 'react';
 import {Flex} from "antd-mobile";
+import 'antd-mobile/dist/antd-mobile.css';
 
 export interface AppProps {
 }

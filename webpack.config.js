@@ -73,21 +73,6 @@ module.exports = {
             {
                 test: /\.tsx?$/,
                 use: [
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            presets: ['@babel/preset-env'],
-                            "plugins": [
-                                [
-                                    "import",
-                                    {
-                                        "libraryName": "antd-mobile",
-                                        "style": "css"
-                                    }
-                                ]
-                            ]
-                        }
-                    },
                     'ts-loader'
                 ],
                 exclude: /node_modules/
