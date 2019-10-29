@@ -14,6 +14,7 @@
     "pull": "git pull -r && git pull github develop -r && git pull coding develop -r"
   },
   "dependencies": {
+    "antd-mobile": "^2.3.1",
     "async": "^1.5.2",
     "body-parser": "^1.15.0",
     "connect-busboy": "0.0.2",
@@ -29,9 +30,13 @@
     "wordpress": "^1.1.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
     "@types/lodash": "^4.14.144",
     "@types/react": "^16.9.11",
     "@types/react-dom": "^16.9.3",
+    "babel-loader": "^8.0.6",
+    "babel-plugin-import": "^1.12.2",
     "bower": "^1.3.3",
     "clean-webpack-plugin": "^3.0.0",
     "css-loader": "^3.2.0",
@@ -62,14 +67,14 @@
     "shelljs": "^0.5.3",
     "source-map-loader": "^0.2.4",
     "style-loader": "^1.0.0",
+    "terser-webpack-plugin": "latest",
     "ts-loader": "^6.2.1",
     "typescript": "^3.6.4",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9",
     "webpack-dev-middleware": "^3.7.2",
     "webpack-dev-server": "^3.9.0",
-    "xml-loader": "^1.2.1",
-    "terser-webpack-plugin": "latest"
+    "xml-loader": "^1.2.1"
   },
   "cordovaPlugins": [
     "cordova-plugin-device",

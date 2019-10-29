@@ -22,6 +22,10 @@ module.exports = {
         new webpack.DefinePlugin({
             'process.env.NODE_ENV': JSON.stringify('production')
         }),
+        [["import", {
+            "libraryName": "antd-mobile",
+            "style": true,   // or 'css'
+        }]]
     ],
     output: {
         path: path.resolve(__dirname, 'dist/from'),

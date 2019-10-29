@@ -1,9 +1,8 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-
-import { Hello } from "./components/Hello";
+import React from "react";
+import ReactDOM from "react-dom";
+import {App} from "./components/App";
 
 ReactDOM.render(
-    <Hello compiler="TypeScript" framework="React" />,
+    <App />,
     document.getElementById("index")
 );
