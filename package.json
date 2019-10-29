@@ -7,9 +7,7 @@
     "start:ionic-web": "node index.js",
     "test": "mocha && gulp test",
     "build": "NODE_ENV=production gulp build && NODE_ENV=production webpack",
-    "start:webpack-dev-server": "webpack-dev-server --open --hotOnly",
-    "start:webpack-web": "node server.js",
-    "watch": "webpack --watch",
+    "start:webpack-dev-server": "webpack-dev-server --open --hotOnly --watch",
     "push": "git push && git push github develop && git push coding develop",
     "pull": "git pull -r && git pull github develop -r && git pull coding develop -r"
   },
@@ -24,6 +22,7 @@
     "gulp-rename": "^1.2.0",
     "gulp-sass": "^1.3.3",
     "lodash": "^4.17.15",
+    "rc-form": "^2.4.9",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
     "victormono": "^1.2.6",

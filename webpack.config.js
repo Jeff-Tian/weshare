@@ -20,13 +20,13 @@ module.exports = {
             filename: './index.html'
         }),
         new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify('production')
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV)
         }),
     ],
     output: {
         path: path.resolve(__dirname, 'dist/from'),
-        filename: '[name].[contenthash].js',
-        chunkFilename: '[name].[contenthash].js',
+        filename: process.env.NODE_ENV === 'production' ? '[name].[contenthash].js' : '[name].[hash].js',
+        chunkFilename: process.env.NODE_ENV === 'production' ? '[name].[contenthash].js' : '[name].[hash].js',
         publicPath: process.env.NODE_ENV === 'production' ? '/from' : '/'
     },
     optimization: {
