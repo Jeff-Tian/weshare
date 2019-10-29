@@ -4,9 +4,12 @@
   "description": "Sharing tool",
   "private": true,
   "scripts": {
-    "start": "node index.js",
+    "start:ionic-web": "node index.js",
     "test": "mocha && gulp test",
-    "build": "gulp build && webpack",
+    "build": "NODE_ENV=production gulp build && NODE_ENV=production webpack",
+    "start:webpack-dev-server": "webpack-dev-server --open --hotOnly",
+    "start:webpack-web": "node server.js",
+    "watch": "webpack --watch",
     "push": "git push && git push github develop && git push coding develop",
     "pull": "git pull -r && git pull github develop -r && git pull coding develop -r"
   },
@@ -14,7 +17,6 @@
     "async": "^1.5.2",
     "body-parser": "^1.15.0",
     "connect-busboy": "0.0.2",
-    "express": "^4.17.1",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.2.0",
     "gulp-minify-css": "^0.3.0",
@@ -30,6 +32,7 @@
     "clean-webpack-plugin": "^3.0.0",
     "css-loader": "^3.2.0",
     "csv-loader": "^3.0.2",
+    "express": "^4.17.1",
     "file-loader": "^4.2.0",
     "fs": "0.0.2",
     "gulp": "^3.9.0",
@@ -58,6 +61,8 @@
     "typescript": "^3.6.4",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9",
+    "webpack-dev-middleware": "^3.7.2",
+    "webpack-dev-server": "^3.9.0",
     "xml-loader": "^1.2.1"
   },
   "cordovaPlugins": [

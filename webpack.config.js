@@ -3,8 +3,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 module.exports = {
+    mode: process.env.NODE_ENV || 'development',
     entry: {app: './src/index.ts', print: './src/prints.js'},
     devtool: 'inline-source-map',
+    devServer: {
+        contentBase: './dist',
+        hot: true
+    },
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
@@ -13,7 +18,8 @@ module.exports = {
     ],
     output: {
         path: path.resolve(__dirname, 'dist/from'),
-        filename: '[name].[contenthash].js'
+        filename: '[name].[hash].js',
+        publicPath: '/'
     },
     optimization: {
         moduleIds: 'hashed',
