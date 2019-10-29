@@ -68,7 +68,8 @@
     "webpack-cli": "^3.3.9",
     "webpack-dev-middleware": "^3.7.2",
     "webpack-dev-server": "^3.9.0",
-    "xml-loader": "^1.2.1"
+    "xml-loader": "^1.2.1",
+    "terser-webpack-plugin": "latest"
   },
   "cordovaPlugins": [
     "cordova-plugin-device",
