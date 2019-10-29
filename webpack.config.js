@@ -22,10 +22,6 @@ module.exports = {
         new webpack.DefinePlugin({
             'process.env.NODE_ENV': JSON.stringify('production')
         }),
-        [["import", {
-            "libraryName": "antd-mobile",
-            "style": true,   // or 'css'
-        }]]
     ],
     output: {
         path: path.resolve(__dirname, 'dist/from'),
@@ -49,6 +45,11 @@ module.exports = {
         runtimeChunk: 'single',
         splitChunks: {
             cacheGroups: {
+                'antd-mobile': {
+                    test: /[\\/]node_modules[\\/](antd-mobile)[\\/]/,
+                    name: 'antd-mobile',
+                    chunks: 'all'
+                },
                 'react-dom': {
                     test: /[\\/]node_modules[\\/](react-dom)[\\/]/,
                     name: 'react-dom',
@@ -71,7 +72,24 @@ module.exports = {
         rules: [
             {
                 test: /\.tsx?$/,
-                use: 'ts-loader',
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            presets: ['@babel/preset-env'],
+                            "plugins": [
+                                [
+                                    "import",
+                                    {
+                                        "libraryName": "antd-mobile",
+                                        "style": "css"
+                                    }
+                                ]
+                            ]
+                        }
+                    },
+                    'ts-loader'
+                ],
                 exclude: /node_modules/
             },
             {
@@ -110,7 +128,7 @@ module.exports = {
                 enforce: "pre",
                 test: /\.js$/,
                 loader: "source-map-loader"
-            }
+            },
         ]
     },
     // externals: {
