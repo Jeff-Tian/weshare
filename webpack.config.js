@@ -82,10 +82,10 @@ module.exports = {
             }
         ]
     },
-    externals: {
-        "react": "React",
-        "react-dom": "ReactDOM"
-    },
+    // externals: {
+    //     "react": "React",
+    //     "react-dom": "ReactDOM"
+    // },
     resolve: {
         extensions: ['.tsx', '.ts', '.js']
     }
