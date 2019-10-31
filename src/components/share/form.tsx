@@ -1,4 +1,4 @@
-import {Button, ImagePicker, InputItem, List, Modal, TextareaItem, WingBlank} from "antd-mobile";
+import {Button, ImagePicker, InputItem, List, Modal, TextareaItem, Toast, WingBlank} from "antd-mobile";
 import React from "react";
 import {createForm} from 'rc-form';
 
@@ -19,11 +19,12 @@ function closest(el: any, selector: string) {
 
 class ShareForm extends React.Component<ShareFormProps> {
     state = {
-        targetLink: '',
+        targetLink: 'https://share.js.org/from',
         files: [{
             url: 'https://zos.alipayobjects.com/rmsportal/PZUUCKTRIHWiZSY.jpeg',
             id: '2121',
         }],
+        title: '叽歪分享',
         modal: false
     };
 
@@ -31,6 +32,12 @@ class ShareForm extends React.Component<ShareFormProps> {
         console.log('files = ', files, operationType, index);
         this.setState({files})
     };
+
+    onChangeText = (key: string) => (text: string) => {
+        this.setState({
+            [key]: text
+        })
+    }
 
     onClose = (key: string) => () => {
         this.setState({
@@ -52,8 +59,21 @@ class ShareForm extends React.Component<ShareFormProps> {
     makeShare(e: Event) {
         e.preventDefault(); // 修复 Android 上点击穿透
 
+        wx.ready(() => {
+            wx.updateTimelineShareData({
+                title: this.state.title,
+                link: this.state.targetLink.startsWith('https://share.js.org') ? this.state.targetLink : 'https://share.js.org/to?to=' + encodeURIComponent(this.state.targetLink),
+                imgUrl: this.state.files[0].url || 'http://share.js.org/img/ionic.png',
+                success: () => {
+                    this.setState({
+                        modal: true
+                    })
+                },
+                cancel: () => Toast.fail('微信分享被取消。')
+            })
+        })
 
-        this.setState({modal: true})
+        wx.error(() => Toast.fail('微信分享失败。'))
     }
 
     componentDidMount() {
@@ -69,6 +89,16 @@ class ShareForm extends React.Component<ShareFormProps> {
                     'updateTimelineShareData'
                 ] // 必填，需要使用的JS接口列表
             })
+
+            wx.ready(() => {
+                Toast.success(
+                    'wx.config 成功'
+                )
+            })
+
+            wx.error((res) => {
+                Toast.fail(JSON.stringify(res))
+            })
         })
     }
 
@@ -78,8 +108,9 @@ class ShareForm extends React.Component<ShareFormProps> {
 
         return (
             <List>
-                <InputItem {...getFieldProps('link')} type="url" defaultValue="https://share.js.org/from"
-                           placeholder="你要分享的链接" clear>
+                <InputItem {...getFieldProps('targetLink')} type="url" defaultValue="https://share.js.org/from"
+                           placeholder="你要分享的链接" clear onChange={this.onChangeText('targetLink')}
+                           value={this.state.targetLink}>
                     目标链接：
                 </InputItem>
 
@@ -88,6 +119,8 @@ class ShareForm extends React.Component<ShareFormProps> {
                     title="分享标题："
                     autoHeight
                     labelNumber={5}
+                    value={this.state.title}
+                    onChange={this.onChangeText('title')}
                 />
 
                 <p>分享图标：</p>

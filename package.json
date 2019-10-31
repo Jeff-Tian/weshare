@@ -31,6 +31,7 @@
   "devDependencies": {
     "@babel/core": "^7.6.4",
     "@babel/preset-env": "^7.6.3",
+    "@jeff-tian/typed-jweixin": "^1.4.1",
     "@types/lodash": "^4.14.144",
     "@types/react": "^16.9.11",
     "@types/react-dom": "^16.9.3",
@@ -68,7 +69,6 @@
     "style-loader": "^1.0.0",
     "terser-webpack-plugin": "^2.2.1",
     "ts-loader": "^6.2.1",
-    "typed-jweixin": "^1.2.0-update.2",
     "typescript": "^3.6.4",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9",
