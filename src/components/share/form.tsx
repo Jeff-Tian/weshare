@@ -1,6 +1,17 @@
-import {Button, ImagePicker, InputItem, List, Modal, TextareaItem, Toast, WingBlank} from "antd-mobile";
+import {
+    Button,
+    Card,
+    ImagePicker,
+    InputItem,
+    List,
+    Modal,
+    TextareaItem,
+    Toast,
+    WhiteSpace
+} from "antd-mobile";
 import React from "react";
 import {createForm} from 'rc-form';
+import {toDataURL} from 'qrcode'
 
 interface ShareFormProps {
     form: any;
@@ -17,14 +28,16 @@ function closest(el: any, selector: string) {
     return null;
 }
 
+const query: any = new URLSearchParams(location.search)
+
 class ShareForm extends React.Component<ShareFormProps> {
-    state = {
-        targetLink: 'https://share.js.org/from',
+    state: any = {
+        targetLink: query.get('l') || 'https://share.js.org/from',
         files: [{
-            url: 'https://zos.alipayobjects.com/rmsportal/PZUUCKTRIHWiZSY.jpeg',
+            url: query.get('f') || 'https://zos.alipayobjects.com/rmsportal/PZUUCKTRIHWiZSY.jpeg',
             id: '2121',
         }],
-        title: '叽歪分享',
+        title: query.get('t') || '叽歪分享',
         modal: false
     };
 
@@ -59,6 +72,17 @@ class ShareForm extends React.Component<ShareFormProps> {
     makeShare(e: Event) {
         e.preventDefault(); // 修复 Android 上点击穿透
 
+        const link = `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}`
+        console.log(link)
+
+        this.setState({
+                shareLink: link
+            },
+            async () => {
+                this.setState({qrCode: await toDataURL(this.state.shareLink)})
+            }
+        );
+
         wx.ready(() => {
             wx.updateTimelineShareData({
                 title: this.state.title,
@@ -77,6 +101,12 @@ class ShareForm extends React.Component<ShareFormProps> {
     }
 
     componentDidMount() {
+        this.setState({
+            shareLink: `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}`,
+        }, async () => {
+            this.setState({qrCode: await toDataURL(this.state.shareLink)})
+        });
+
         fetch('https://uniheart.pa-ca.me/wechat-dev/js-sdk-sign?select=wechat&url=' + encodeURIComponent(location.origin + location.pathname)).then(r => r.json()).then((json: any) => {
             wx.config({
                 debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
@@ -146,7 +176,21 @@ class ShareForm extends React.Component<ShareFormProps> {
                     length={3}
                 />
 
-                <Button type="primary" onClick={this.makeShare.bind(this)}>分享</Button>
+                <Button type="primary" onClick={this.makeShare.bind(this)}>确定</Button>
+
+                <WhiteSpace size="lg"/>
+
+                <Card>
+                    <Card.Header
+                        title="本页二维码"
+                        thumb="https://gw.alipayobjects.com/zos/rmsportal/MRhHctKOineMbKAZslML.jpg"
+                        extra=""
+                    />
+                    <Card.Body>
+                        <div><img alt="本页二维码" src={this.state.qrCode}/></div>
+                    </Card.Body>
+                    <Card.Footer content={this.state.shareLink} extra=""/>
+                </Card>
 
                 <Modal
                     visible={this.state.modal}
