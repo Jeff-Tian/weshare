@@ -1,4 +1,5 @@
 import {
+    ActivityIndicator,
     Button,
     Card,
     ImagePicker,
@@ -38,7 +39,8 @@ class ShareForm extends React.Component<ShareFormProps> {
             id: '2121',
         }],
         title: query.get('t') || '叽歪分享',
-        modal: false
+        modal: false,
+        loading: true
     };
 
     onChange = (files: Array<{}>, operationType: string, index?: number) => {
@@ -73,7 +75,6 @@ class ShareForm extends React.Component<ShareFormProps> {
         e.preventDefault(); // 修复 Android 上点击穿透
 
         const link = `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}`
-        console.log(link)
 
         this.setState({
                 shareLink: link
@@ -90,10 +91,15 @@ class ShareForm extends React.Component<ShareFormProps> {
                 imgUrl: this.state.files[0].url || 'http://share.js.org/img/ionic.png',
                 success: () => {
                     this.setState({
-                        modal: true
+                        modal: true,
                     })
                 },
                 cancel: () => Toast.fail('微信分享被取消。')
+            })
+
+            console.log('updateTimelineShareData 执行完毕。')
+            this.setState({
+                loading: false
             })
         })
 
@@ -108,6 +114,10 @@ class ShareForm extends React.Component<ShareFormProps> {
         });
 
         fetch('https://uniheart.pa-ca.me/wechat-dev/js-sdk-sign?select=wechat&url=' + encodeURIComponent(location.origin + location.pathname + location.search)).then(r => r.json()).then((json: any) => {
+            if (!/micromessenger/i.test(navigator.userAgent)) {
+                this.setState({loading: false})
+            }
+
             wx.config({
                 debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
                 appId: json.appId, // 必填，公众号的唯一标识
@@ -122,11 +132,15 @@ class ShareForm extends React.Component<ShareFormProps> {
 
             wx.ready(() => {
                 Toast.success(
-                    'wx.config 成功'
+                    'wx ready',
                 )
+
+                if (/micromessenger/i.test(navigator.userAgent)) {
+                    this.makeShare(new Event('click'))
+                }
             })
 
-            wx.error((res) => {
+            wx.error((res: any) => {
                 Toast.fail(JSON.stringify(res))
             })
         })
@@ -210,7 +224,7 @@ class ShareForm extends React.Component<ShareFormProps> {
                         分享内容已经成功设置，你现在可以点击右上角进行分享了。
                     </div>
                 </Modal>
-
+                {this.state.loading && <ActivityIndicator toast text="正在加载"/>}
             </List>
         )
     }
