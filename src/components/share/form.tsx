@@ -128,9 +128,22 @@ class ShareForm extends React.Component<ShareFormProps> {
                     files={files}
                     onChange={this.onChange}
                     onImageClick={(index, fs) => console.log(index, fs)}
+                    onAddImageClick={() => {
+                        Modal.prompt('输入图片地址', '请输入图片 url', [{
+                            text: '取消',
+                        }, {
+                            text: '确定',
+                            onPress: value => this.setState({
+                                files: [{
+                                    url: value,
+                                    id: '1234'
+                                }]
+                            })
+                        }]);
+                    }}
                     selectable={files.length < 1}
                     multiple={false}
-                    length={0}
+                    length={3}
                 />
 
                 <Button type="primary" onClick={this.makeShare.bind(this)}>分享</Button>
@@ -153,6 +166,7 @@ class ShareForm extends React.Component<ShareFormProps> {
                         分享内容已经成功设置，你现在可以点击右上角进行分享了。
                     </div>
                 </Modal>
+
             </List>
         )
     }
