@@ -30,6 +30,7 @@ function closest(el: any, selector: string) {
     return null;
 }
 
+console.log('referer = ', document.referrer)
 const query: any = new URLSearchParams(location.search)
 
 class ShareForm extends React.Component<ShareFormProps> {
@@ -53,7 +54,7 @@ class ShareForm extends React.Component<ShareFormProps> {
             id: '1234'
         }],
         targetLink: o.link
-    });
+    }, () => this.makeShare(new Event('click')));
 
     onChange = (files: Array<{}>, operationType: string, index?: number) => {
         console.log('files = ', files, operationType, index);
