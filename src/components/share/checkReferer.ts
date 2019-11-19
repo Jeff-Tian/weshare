@@ -1,6 +1,7 @@
-import R from "ramda";
 import cheerio from 'cheerio';
 import axios from "axios";
+
+const R = require('ramda')
 
 export default async function checkReferer() {
     if (!document.referrer) {
@@ -19,7 +20,7 @@ export async function parseUrl(url: string) {
     }
 
     const parse = R.memoizeWith(R.identity, xx)
-    const parsed = parse(url)
+    const parsed = parse(`https://uniheart.pa-ca.me/proxy?url=${encodeURIComponent(url)}`)
     const get = async (selector: string) => {
         const [query, attr] = selector.split('@')
         let $$ = await parsed(query);

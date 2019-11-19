@@ -13,7 +13,7 @@ import {
 import React from "react";
 import {createForm} from 'rc-form';
 import {toDataURL} from 'qrcode'
-import checkReferer from "./checkReferer";
+import checkReferer, {parseUrl} from "./checkReferer";
 
 interface ShareFormProps {
     form: any;
@@ -45,6 +45,16 @@ class ShareForm extends React.Component<ShareFormProps> {
         loading: true
     };
 
+    parseResult = (o: any) => this.setState({
+        title: o.title,
+        description: o.description,
+        files: [{
+            url: o.imgUrl,
+            id: '1234'
+        }],
+        targetLink: o.link
+    });
+
     onChange = (files: Array<{}>, operationType: string, index?: number) => {
         console.log('files = ', files, operationType, index);
         this.setState({files})
@@ -72,6 +82,16 @@ class ShareForm extends React.Component<ShareFormProps> {
             e.preventDefault();
         }
     };
+
+    autoParse(e: Event) {
+        e.preventDefault();
+
+        this.setState({loading: true})
+        parseUrl(this.state.targetLink).then(this.parseResult).catch(error => {
+            console.error(error);
+            alert('解析失败！')
+        }).finally(() => this.setState({loading: false}))
+    }
 
     makeShare(e: Event) {
         e.preventDefault(); // 修复 Android 上点击穿透
@@ -127,15 +147,7 @@ class ShareForm extends React.Component<ShareFormProps> {
 
     componentDidMount() {
         if (!query.get('l')) {
-            checkReferer().then(o => this.setState({
-                title: o.title,
-                description: o.description,
-                files: [{
-                    url: o.imgUrl,
-                    id: '1234'
-                }],
-                targetLink: o.link
-            })).catch(console.error)
+            checkReferer().then(this.parseResult).catch(console.error)
         }
 
         this.setState({
@@ -226,7 +238,8 @@ class ShareForm extends React.Component<ShareFormProps> {
                     length={3}
                 />
 
-                <Button type="primary" onClick={this.makeShare.bind(this)}>确定</Button>
+                <Button inline type="ghost" onClick={this.autoParse.bind(this)}>自动提取</Button>
+                <Button inline type="primary" onClick={this.makeShare.bind(this)}>准备分享</Button>
 
                 <WhiteSpace size="lg"/>
 
