@@ -39,6 +39,7 @@ class ShareForm extends React.Component<ShareFormProps> {
             id: '2121',
         }],
         title: query.get('t') || '叽歪分享',
+        description: query.get('d') || '',
         modal: false,
         loading: true
     };
@@ -74,7 +75,7 @@ class ShareForm extends React.Component<ShareFormProps> {
     makeShare(e: Event) {
         e.preventDefault(); // 修复 Android 上点击穿透
 
-        const link = `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}`
+        const link = `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}&d=${encodeURIComponent(this.state.description)}`
 
         this.setState({
                 shareLink: link
@@ -85,19 +86,36 @@ class ShareForm extends React.Component<ShareFormProps> {
         );
 
         wx.ready(() => {
+            let targetLink = this.state.targetLink.startsWith('https://share.js.org') ? this.state.targetLink : 'https://share.js.org/to?to=' + encodeURIComponent(this.state.targetLink);
+            let imgUrl = this.state.files[0].url || 'http://share.js.org/img/ionic.png';
+            let success = () => {
+                this.setState({
+                    modal: true,
+                })
+            };
+            let cancel = () => Toast.fail('微信分享被取消。');
+
             wx.updateTimelineShareData({
                 title: this.state.title,
-                link: this.state.targetLink.startsWith('https://share.js.org') ? this.state.targetLink : 'https://share.js.org/to?to=' + encodeURIComponent(this.state.targetLink),
-                imgUrl: this.state.files[0].url || 'http://share.js.org/img/ionic.png',
-                success: () => {
-                    this.setState({
-                        modal: true,
-                    })
-                },
-                cancel: () => Toast.fail('微信分享被取消。')
+                link: targetLink,
+                imgUrl,
+                success,
+                cancel
             })
-
             console.log('updateTimelineShareData 执行完毕。')
+
+            let appMessageShareData = {
+                title: this.state.title,
+                link: targetLink,
+                imgUrl,
+                desc: this.state.description,
+                success,
+                cancel
+            };
+            wx.updateAppMessageShareData(appMessageShareData)
+            console.log('updateAppMessageShareData 执行完毕。')
+            wx.onMenuShareWeibo(appMessageShareData)
+
             this.setState({
                 loading: false
             })
@@ -161,11 +179,16 @@ class ShareForm extends React.Component<ShareFormProps> {
                 <TextareaItem
                     {...getFieldProps('title')}
                     title="分享标题："
+                    placeholder="必填。分享到朋友圈或者好友都会显示"
                     autoHeight
                     labelNumber={5}
                     value={this.state.title}
                     onChange={this.onChangeText('title')}
                 />
+
+                <TextareaItem {...getFieldProps('description')} title="分享简介：" autoHeight labelNumber={5}
+                              placeholder="可选。仅对分享给好友有效"
+                              value={this.state.description} onChange={this.onChangeText('description')}/>
 
                 <p>分享图标：</p>
                 <ImagePicker
@@ -196,7 +219,7 @@ class ShareForm extends React.Component<ShareFormProps> {
 
                 <Card>
                     <Card.Header
-                        title="本页二维码"
+                        title="微信扫一扫分享："
                         thumb="https://gw.alipayobjects.com/zos/rmsportal/MRhHctKOineMbKAZslML.jpg"
                         extra=""
                     />
