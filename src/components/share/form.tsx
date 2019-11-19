@@ -13,6 +13,7 @@ import {
 import React from "react";
 import {createForm} from 'rc-form';
 import {toDataURL} from 'qrcode'
+import checkReferer from "./checkReferer";
 
 interface ShareFormProps {
     form: any;
@@ -33,7 +34,7 @@ const query: any = new URLSearchParams(location.search)
 
 class ShareForm extends React.Component<ShareFormProps> {
     state: any = {
-        targetLink: query.get('l') || 'https://share.js.org/from',
+        targetLink: query.get('l') || document.referrer || 'https://share.js.org/from',
         files: [{
             url: query.get('f') || 'https://zos.alipayobjects.com/rmsportal/PZUUCKTRIHWiZSY.jpeg',
             id: '2121',
@@ -125,6 +126,18 @@ class ShareForm extends React.Component<ShareFormProps> {
     }
 
     componentDidMount() {
+        if (!query.get('l')) {
+            checkReferer().then(o => this.setState({
+                title: o.title,
+                description: o.description,
+                files: [{
+                    url: o.imgUrl,
+                    id: '1234'
+                }],
+                targetLink: o.link
+            })).catch(console.error)
+        }
+
         this.setState({
             shareLink: `${location.origin}${location.pathname}?l=${encodeURIComponent(this.state.targetLink)}&t=${encodeURIComponent(this.state.title)}&f=${encodeURIComponent(this.state.files[0].url || 'https://share.js.org/img/ionic.png')}`,
         }, async () => {
