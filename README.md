@@ -5,6 +5,13 @@
 [![Build Status](https://travis-ci.com/Jeff-Tian/weshare.svg?branch=master)](https://travis-ci.com/Jeff-Tian/weshare)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FJeff-Tian%2Fweshare.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FJeff-Tian%2Fweshare?ref=badge_shield)
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=Jeff-Tian_weshare)](https://sonarcloud.io/dashboard?id=Jeff-Tian_weshare)
+
+## Mirrors
+- https://sharing.herokuapp.com
+- https://share.js.org
+- https://jeff-tian.github.io/weshare
+
 ## update travis heroku api_key
 ```bash
 travis encrypt $(heroku authorizations:create) --add deploy.api_key --pro
@@ -17,6 +24,24 @@ ssh-keygen -t rsa -b 4096 -C "$(git config user.email)" -f gh-pages -N ""
 #   gh-pages.pub (public key)
 #   gh-pages     (private key)
 ```
+
+## Development
+
+This project is initially a very old Ionic project. But now I'm going to use webpack inside it, where in the [`~/src`](./src) folder will be.
+
+### Start ionic project locally
+```bash
+npm run start:ionic-web
+```
+
+### Start webpack project locally
+```bash
+npm run start:webpack-dev-server
+```
+
+## FAQ on Development
+- `npm run start:webpack-dev-server` raises: TS2304: Cannot find name 'wx'.
+> Solution: run `npm i @jeff-tian/typed-jweixin` 
 
 ## Related accounts
 

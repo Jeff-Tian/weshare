@@ -7,6 +7,7 @@ install:
 - npm i
 script:
 - npm test
+- npm run test-ts
 - npm run build
 after_script:
 - npm i codecov && codecov
@@ -15,5 +16,6 @@ deploy:
   provider: heroku
   app: wesharing
   skip_cleanup: true
+  script: skip
   api_key:
     secure: pMWIVHU230TuhgtuDMKgOkQ2TwQcSBy6rY8UCC9mON4UKm7bjwqT0m0kQBMNUpJxMg3zZS4p1x9T2rOuvJR1jgYqy32vX03Kiy2U2kQB5/9F7Y1OlUzHlpVOdvZ9fsDlukF41nC6b5xmcEFvxNxqkUZO8gQSIqQtO4in+/avySRz2R1pXMEVC9oXMvaXSMvN4ef4XgvNUqas7jVAouhaaRxXiCxBKd+JMR9oOPKEDdRVH7l7JOrO+5/5Cg6fue0TdU8U6ddnHbaZgAaLtk8lA6Us9feY/KUAJBiRz4wHHN1NQBtnqVYPFQa9QckbK3mBIgvis1X0AvXQKGlydhAnTPMdR8Ewk4jDkcnwDMfkdel3BhXMw4e3xq/237T5PxbtkHXdjkEPaZSv8qTWd4geKxL/fRj6+VIN90Bmqhb2AtUjabrkLyzDWzA9OjiYaLKTtUmp+LLzJt1ziVUQE2bgOPA6DjL8gjCEbCUMM/9bgsnqON/Y6Du8ZT5d/G9vhbdBINqc4NjewYRe2G1m/RR2q/RgDvwvmnY8jMYYAWeSGbPIegxc3P3WvlQXRAmYax02Yq5kZs8G9oeBXeIA+9k+aAVmeFhwncFGinKwxHbuL2YQSjZV2dfs8gqxG+JtpDoRy6c4eXCUGvfBT1CG8yaRWox0t+fb1nLw4hMu9SMY32o=

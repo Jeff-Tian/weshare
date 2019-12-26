@@ -149,10 +149,40 @@ angular.module('starter.controllers', ['jiyConfig'])
     }])
 
     .controller('ChatDetailCtrl', ['$scope', '$stateParams', 'Chats', 'Weibo', 'UI', 'LocalJiy', 'AppEvents', 'Social', 'QQ', 'WechatAccount', 'SavedSocialAccounts', 'SocialAccounts', '$http', 'FileReaderService', 'ChatCourier', '$timeout', function ($scope, $stateParams, Chats, Weibo, UI, LocalJiy, AppEvents, Social, QQ, WechatAccount, SavedSocialAccounts, SocialAccounts, $http, FileReaderService, ChatCourier, $timeout) {
+        $http
+            .get('https://uniheart.pa-ca.me/wechat-dev/js-sdk-sign?select=wechat&url=' + encodeURIComponent(location.origin + location.pathname)).then(function (res) {
+            var config = {
+                debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+                appId: res.data.appId, // 必填，公众号的唯一标识
+                timestamp: res.data.timestamp, // 必填，生成签名的时间戳
+                nonceStr: res.data.nonceStr, // 必填，生成签名的随机串
+                signature: res.data.signature, // 必填，签名
+                jsApiList: [
+                    'updateAppMessageShareData',
+                    'updateTimelineShareData'
+                ] // 必填，需要使用的JS接口列表
+            };
+
+            fundebug.notify('configure wx: ', {metaData: config});
+
+            wx.config(config);
+
+            wx.ready(function () {
+                UI.toast('微信分享配置成功。', 'short');
+                fundebug.notify('wx.config 成功');
+            });
+
+            wx.error(function (res) {
+                UI.toast('微信分享配置失败……', 'short');
+                fundebug.notifyError('wx.config 失败：', {metaData: res});
+            });
+        });
+
         $scope.chat = {};
         Chats.get($stateParams.chatId, function (data) {
             $timeout(function () {
                 $scope.chat = data.data;
+                $scope.chatType = ChatCourier.getChatType($scope.chat);
             });
         });
 

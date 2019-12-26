@@ -139,32 +139,8 @@ gulp.task('build', function (done) {
     runSequence('rsync', 'minify-js-css', 'minify-html', done);
 });
 
-var env = {
-    dev: { ip: '121.199.35.151', domain: 'http://meiyanruhua.tao3w.com', user: 'root' },
-    test: { ip: '112.74.77.139', domain: 'http://test.meiyanruhua.com', user: 'root' },
-    production: { ip: '120.26.216.41', domain: '120.26.216.41', user: 'root' }
-};
-
-function getRemote(env) {
-    return env.user + '@' + env.ip;
-}
-
-gulp.task('deploy-build-production', function (done) {
-    var remote = getRemote(env.production);
-
-    var command = 'rsync -ave ssh ./dist/ ' + remote + ':/var/www/html/jiy/.';
-    console.log(command);
-
-    sh.exec(command, function () {
-        done();
-    });
-});
-
-gulp.task('deploy-production', function (done) {
-    runSequence('build', 'deploy-build-production', done);
-});
-
 var fs = require('fs');
+
 function getAppVersion() {
     var configXML = fs.readFileSync('./config.xml').toString();
     var flag = '<widget id="com.ionicframework.workspace440082" version="';

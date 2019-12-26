@@ -157,7 +157,7 @@ angular.module('starter.services', [])
                 var request = getIndexedDBReference.getIndexedDBReference().open(db.objectStoreName, db.version);
                 request.onerror = db.errorHandler;
                 request.onupgradeneeded = db.upgrade;
-                request.onsuccess = function (e) {
+                request.onsuccess = function () {
                     db.instance = request.result;
                     db.instance.onerror = db.errorHandler;
 
@@ -643,18 +643,27 @@ angular.module('starter.services', [])
                         PREVIEW: 2  // 体验版
                     },
 
-                    share: function (msg, scene) {
-                        alert('sharing...');
-                        wx.ready(function () {      //需在用户可能点击分享按钮前就先调用
-                            wx.updateTimelineShareData({
-                                title: '纟', // 分享标题
-                                link: 'https://www.baidu.com', // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
-                                imgUrl: 'https://gw.alipayobjects.com/zos/rmsportal/XuVpGqBFxXplzvLjJBZB.svg', // 分享图标
-                                success: function () {
-                                    // 设置成功
-                                    alert('分享成功');
-                                }
-                            });
+                    share: function (data, successCallback, errorCallback) {
+                        wx.ready(function () {
+                            UI.toast('微信分享已连接。', 'short')
+                            console2.log('data = ', data);
+
+                            switch (data.scene) {
+                                case wechatApp.Scene.TIMELINE:
+                                    wx.updateTimelineShareData({
+                                        title: data.message ? data.message.title : data.text,
+                                        link: data.message && data.message.media && data.message.media.webpageUrl ? ('https://share.js.org/to?to=' + encodeURIComponent(data.message.media.webpageUrl)) : window.location.href,
+                                        imgUrl: data.message && data.message.thumb ? data.message.thumb : 'http://share.js.org/img/ionic.png',
+                                        success: function () {
+                                            UI.toast('微信分享设置已成功！', 'short');
+                                        }
+                                    });
+                                    break;
+                                default:
+                                    UI.toast('不支持的分享场景：' + data.scene);
+                                    break;
+                            }
+                            UI.toast('微信分享已设置。', 'short');
                         });
                     },
                 };
@@ -1016,13 +1025,17 @@ angular.module('starter.services', [])
 
                     $http.get(chat.text)
                         .success(function (response) {
+                            console2.log('res = ', response)
                             var $html = $(response);
                             title = $html.find('.rich_media_title').text() || response.match(/<title>(.+?)<\/title>/)[1] || title;
                             desc = title;
                             // thumb = $html.find('img.rich_media_thumb').src || thumb;
                         })
+                        .error(function (error) {
+                            title = prompt('请输入链接标题：');
+                            thumb = prompt('请输入分享图标 URL：');
+                        })
                         .finally(function () {
-
                             WechatApp.share({
                                 message: {
                                     title: title,
