@@ -39,6 +39,10 @@ npm run start:ionic-web
 npm run start:webpack-dev-server
 ```
 
+## FAQ on Development
+- `npm run start:webpack-dev-server` raises: TS2304: Cannot find name 'wx'.
+> Solution: run `npm i @jeff-tian/typed-jweixin` 
+
 ## Related accounts
 
 ### open.weixin.qq.com

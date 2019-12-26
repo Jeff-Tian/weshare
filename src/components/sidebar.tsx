@@ -1,5 +1,9 @@
 import React from "react"
 import {List} from "antd-mobile"
+import {Link} from "react-router-dom"
 
-export default <List><List.Item
-    thumb="https://zos.alipayobjects.com/rmsportal/eOZidTabPoEbPeU.png">登录</List.Item></List>
+const fullLink = {width: "100%", display: "inline-block"}
+export default <List><List.Item onClick={() => {
+}}
+                                thumb="https://tictactoe.js.org/static/media/user.9dc154d2.svg"><Link
+    to="/sign-in" style={fullLink}>登录</Link></List.Item></List>
