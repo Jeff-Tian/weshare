@@ -1,5 +1,5 @@
 import {Drawer, Icon, NavBar, WingBlank} from "antd-mobile"
-import sidebar from "./sidebar"
+import Sidebar from "./sidebar"
 import ShareFrom from "../pages/share"
 import SignIn from '../pages/signin'
 import React from "react"
@@ -13,7 +13,7 @@ export default function layout(onOpenChange: () => void, drawerOpen: boolean) {
             <NavBar icon={<Icon type="ellipsis"/>} onLeftClick={onOpenChange}>微信分享</NavBar>
             <Drawer className="my-drawer" style={{
                 minHeight: document.documentElement.clientHeight
-            }} enableDragHandle sidebar={sidebar}
+            }} enableDragHandle sidebar={<Sidebar onClick={onOpenChange} />}
                     open={drawerOpen} onOpenChange={onOpenChange}>
                 <div>
                     <WingBlank>
