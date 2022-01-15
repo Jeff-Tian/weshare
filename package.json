@@ -43,7 +43,7 @@
     "karma-phantomjs-launcher": "^0.2.0",
     "phantomjs": "^1.9.17",
     "run-sequence": "^1.1.2",
-    "shelljs": "^0.5.3"
+    "shelljs": "^0.8.5"
   },
   "cordovaPlugins": [
     "cordova-plugin-device",
