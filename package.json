@@ -10,7 +10,7 @@
     "pull": "git pull -r && git pull github develop -r && git pull coding develop -r"
   },
   "dependencies": {
-    "async": "^1.5.2",
+    "async": "^2.6.4",
     "body-parser": "^1.15.0",
     "connect-busboy": "0.0.2",
     "express": "^4.17.1",
