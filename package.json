@@ -13,7 +13,7 @@
     "async": "^1.5.2",
     "body-parser": "^1.15.0",
     "connect-busboy": "0.0.2",
-    "express": "^4.17.1",
+    "express": "^4.19.2",
     "gulp": "^3.9.0",
     "gulp-concat": "^2.2.0",
     "gulp-minify-css": "^0.3.0",
